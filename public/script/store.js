@@ -14,14 +14,15 @@ const initialState = {
     animation: 'animate__fadeInDown',
     nav: 'navbar-sticky',
     user: {},
+    text: {},
     langs_list: [
+        { code: 'en', name: 'English'},
+        { code: 'ar', name: 'Arabic' },
+        { code: 'fr', name: 'French' },
         { code: 'zh', name: 'Chinese' },
         { code: 'da', name: 'Danish' },
-        { code: 'en', name: 'English' },
-        { code: 'fr', name: 'French' },
         { code: 'de', name: 'German' },
         { code: 'el', name: 'Greek' },
-        { code: 'hu', name: 'Hungarian' },
         { code: 'it', name: 'Italian' },
         { code: 'ja', name: 'Japanese' },
         { code: 'pl', name: 'Polish' },
@@ -97,6 +98,9 @@ const themeConfigSlice = createSlice({
             set_session('user', payload || {});
             state.user = payload || {};
         },
+        toggle_text(state, { payload }) {
+            state.text = payload || {};
+        },
         
     }
 
@@ -105,7 +109,7 @@ const themeConfigSlice = createSlice({
 export const {
     toggle_theme, toggle_menu, toggle_layout, toggle_dir,
     toggle_animation, toggle_nav, toggle_semidark, toggle_lang,
-    toggle_side, toggle_setting, toggle_user
+    toggle_side, toggle_setting, toggle_user, toggle_text
 } = themeConfigSlice.actions;
 
 export default themeConfigSlice.reducer;

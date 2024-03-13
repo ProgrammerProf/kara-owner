@@ -1,6 +1,7 @@
 import CryptoJS from "./crypto";
 import Swal from 'sweetalert2';
 export const host = "http://127.0.0.1:8000";
+// export const host = "https://kaarra.pythonanywhere.com";
 
 export function sound ( src, vol ) {
         
@@ -158,7 +159,7 @@ export function cookie(name) {
 }
 export async function api (url, data, method) {
 
-    url = url ? `${host}/api/admin/${url}` : '';
+    url = url ? `${host}/api/owner/${url}` : '';
     data = data ? data : {};
     method = method ? method.toUpperCase() : 'POST';
 
@@ -343,51 +344,51 @@ export function check_class( el, class_name, check_parent=true ) {
 }
 export function lower ( str ) {
     
-    return str ? str.toString().toLowerCase() : str;
+    return str ? str.toString().toLowerCase() : '';
 
 }
 export function upper ( str ) {
     
-    return str ? str.toString().toUpperCase() : str;
+    return str ? str.toString().toUpperCase() : '';
 
 }
 export function capitalize ( str ) {
     
-    if ( !str ) return str;
+    if ( !str ) return '';
     str = lower(str);
     return str.replace(str.slice(0, 1), upper(str.slice(0, 1)));
 
 }
 export function title ( str ) {
     
-    if ( !str ) return str;
+    if ( !str ) return '';
     str = lower(str);
     return str.split(" ").map(_ => capitalize(_)).join(" ");
 
 }
 export function trim ( str ) {
     
-    return str ? str.toString().trim(): str;
+    return str ? str.toString().trim(): '';
 
 }
 export function no_space ( str ) {
     
-    return str ? str.toString().replace(/\s+/g, '') : str;
+    return str ? str.toString().replace(/\s+/g, '') : '';
 
 }
 export function int ( _ ) {
     
-    return parseInt(_);
+    return parseInt(_) || 0;
 
 }
 export function float ( _ ) {
     
-    return parseFloat(_)
+    return parseFloat(_) || 0.0
 
 }
 export function round ( num, _ ) {
 
-    if ( !_ ) return parseInt(num);
+    if ( !_ ) return parseInt(num) || 0;
 
     return parseFloat(num).toFixed(_);
 
@@ -410,7 +411,7 @@ export function matching ( val1, val2 ) {
 
     val1 = val1 ? val1.toString().toLowerCase().trim().replace(/\s+/g, '') : '';
     val2 = val2 ? val2.toString().toLowerCase().trim().replace(/\s+/g, '') : '';
-    return val1.includes(val2);
+    return `${val1}s`.includes(val2);
     
 }
 export function fix_number ( num ) {

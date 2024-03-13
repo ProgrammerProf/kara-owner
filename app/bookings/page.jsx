@@ -15,15 +15,14 @@ export default function Bookings () {
         
         return [
             {
-                accessor: 'id', sortable: true, title: 'ID',
+                accessor: 'id', sortable: true, title: 'id',
                 render: ({ id }) => <div className="font-semibold select-text default">{id}</div>,
             },
             {
-                accessor: 'user', sortable: true, title: 'Guest',
+                accessor: 'user', sortable: true, title: 'guest',
                 render: ({ user, id }) => 
                     user.id ?
-                    <div className="flex items-center font-semibold pointer hover:text-primary hover:underline" 
-                        onClick={() => router.push(`/guests/edit/${user.id}`)}>
+                    <div className="flex items-center font-semibold default">
                         <div className="h-7 w-7 rounded-full overflow-hidden ltr:mr-3 rtl:ml-3 -mt-[2px]">
                             <img 
                                 src={`${host}/U${user.id}`} className="h-full w-full rounded-full object-cover" 
@@ -36,7 +35,7 @@ export default function Bookings () {
                 ,
             },
             {
-                accessor: 'product', sortable: true, title: 'Properties',
+                accessor: 'product', sortable: true, title: 'product',
                 render: ({ product, id }) =>
                     product.id ?
                     <div className="flex items-center font-semibold pointer hover:text-primary hover:underline" 
@@ -53,28 +52,30 @@ export default function Bookings () {
                 ,
             },
             {
-                accessor: 'price', sortable: true, title: 'Price',
-                render: ({ price, id }) => <div className="font-semibold select-text default">{price} RAS</div>,
+                accessor: 'price', sortable: true, title: 'price',
+                render: ({ price, id }) => <div className="font-semibold select-text default">{price} {config.text.currency}</div>,
             },
             {
-                accessor: 'paid', sortable: true, title: 'Paid',
-                render: ({ paid, id }) => <span className={`badge badge-outline-${paid ? 'success' : 'danger'}`}>{paid ? 'Paid' : 'No'}</span>,
+                accessor: 'paid', sortable: true, title: 'paid',
+                render: ({ paid, id }) => <span className={`badge badge-outline-${paid ? 'success' : 'danger'}`}>
+                    {paid ? config.text.paid : config.text.not_paid}
+                </span>,
             },
             {
-                accessor: 'status', sortable: true, title: 'Status',
+                accessor: 'status', sortable: true, title: 'status',
                 render: ({ status, id }) => 
                 status === 1 ?
-                    <span className='badge badge-outline-warning'>Pending</span>
+                    <span className='badge badge-outline-warning'>{config.text.pending}</span>
                 : status === 2 ?
-                    <span className='badge badge-outline-warning'>Stopped</span>
+                    <span className='badge badge-outline-warning'>{config.text.stopped}</span>
                 : status === 3 ?
-                    <span className='badge badge-outline-danger'>Cancelled</span>
+                    <span className='badge badge-outline-danger'>{config.text.cancelled}</span>
                 :
-                    <span className='badge badge-outline-success'>Confirmed</span>
+                    <span className='badge badge-outline-success'>{config.text.confirmed}</span>
                 ,
             },
             {
-                accessor: 'create_date', sortable: true, title: 'Date',
+                accessor: 'create_date', sortable: true, title: 'date',
                 render: ({ create_date, id }) => <div className="font-semibold select-text default">{fix_date(create_date)}</div>,
             },
         ];
@@ -82,13 +83,13 @@ export default function Bookings () {
     }
     const get = async() => {
 
-        const response = await api('booking', {user: config.user.id});
+        const response = await api('booking', {token: config.user.token});
         setData(response.data || []);
 
     }
     const delete_ = async( ids ) => {
 
-        await api('booking/delete', {ids: JSON.stringify(ids), user: config.user.id});
+        await api('booking/delete', {ids: JSON.stringify(ids), token: config.user.token});
 
     }
     const search = ( items, query ) => {
@@ -109,7 +110,7 @@ export default function Bookings () {
     }
     useEffect(() => {
 
-        document.title = "All Bookings";
+        document.title = config.text.all_bookings || '';
         get();
 
     }, []);
@@ -117,7 +118,7 @@ export default function Bookings () {
     return (
 
         <Table 
-            columns={columns} data={data} delete_={delete_} search={search} async_search={false} btn_name="Add Booking"
+            columns={columns} data={data} delete_={delete_} search={search} async_search={false} btn_name="add_booking"
             add={() => router.push(`/bookings/add`)} edit={(id) => router.push(`/bookings/edit/${id}`)} 
             no_delete={!data.length || !config.user.delete_bookings} no_search={!data.length} 
             no_add={!config.user.add_bookings} no_edit={!config.user.see_bookings}

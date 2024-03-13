@@ -2,9 +2,11 @@
 import { fix_date, host, matching } from '@/public/script/public';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment, useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 
 export default function Select ({ model, setModel, data, onChange, product, category }) {
 
+    const config = useSelector((state) => state.config);
     const [search, setSearch] = useState('');
     const [items, setItems] = useState([]);
 
@@ -17,8 +19,13 @@ export default function Select ({ model, setModel, data, onChange, product, cate
             matching(item.create_date, search) ||
             matching(fix_date(item.create_date), search) ||
             matching(item.price, search) ||
-            matching(item.role === 1 ? 'admin' : item.role === 2 ? 'owner' : 'guest', search) ||
-            matching(item.role === 1 ? 'admins' : item.role === 2 ? 'owners' : 'guests', search) ||
+            matching(
+                item.role === 1 && item.super ? config.text.super_admin : 
+                item.role === 1 && item.supervisor ? config.text.supervisor : 
+                item.role === 1 ? config.text.admin : 
+                item.role === 2 ? config.text.owner : 
+                item.role === 3 ? config.text.guest : '', search
+            ) ||
             matching(item.online ? 'online' : 'offline', search)
         );
 
@@ -58,14 +65,14 @@ export default function Select ({ model, setModel, data, onChange, product, cate
                                 </button>
 
                                 <div className="bg-[#fbfbfb] py-[.85rem] text-[1.05rem] no-select font-medium ltr:pl-5 ltr:pr-[50px] rtl:pr-5 rtl:pl-[50px] dark:bg-[#121c2c]">
-                                    { product ? 'Select Property' : category ? 'Select Category' : 'Select User' }
+                                    { product ? config.text.select_product : category ? config.text.select_category : config.text.select_user }
                                 </div>
 
                                 <div className="p-5 min-h-[20rem]">
 
                                     <div className="relative mb-5 no-select">
 
-                                        <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder='Search' className="form-input peer"/>
+                                        <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={config.text.search} className="form-input peer"/>
 
                                     </div>
 
@@ -102,15 +109,19 @@ export default function Select ({ model, setModel, data, onChange, product, cate
                                                                 ( !product && !category ) &&
                                                                 <p className='ltr:mr-2 rtl:ml-2'>
                                                                     {
-                                                                        item.role === 1 ?
-                                                                        <span className='text-[.7rem] text-danger'>Admin</span>
+                                                                        item.role === 1 && item.super ?
+                                                                        <span className='text-[.7rem] text-danger'>{config.text.super_admin}</span>
+                                                                        : item.role === 1 && item.supervisor ?
+                                                                        <span className='text-[.7rem] text-danger'>{config.text.supervisor}</span>
+                                                                        : item.role === 1 ?
+                                                                        <span className='text-[.7rem] text-danger'>{config.text.admin}</span>
                                                                         : item.role === 2 ?
-                                                                        <span className='text-[.7rem] text-primary'>Owner</span> :
-                                                                        <span className='text-[.7rem] text-success'>Guest</span>
+                                                                        <span className='text-[.7rem] text-primary'>{config.text.owner}</span> :
+                                                                        <span className='text-[.7rem] text-success'>{config.text.guest}</span>
                                                                     }
                                                                 </p>
                                                             }
-                                                            { product ? `${item.new_price || 0.0} RAS ~ ${fix_date(item.create_date)}` : fix_date(item.create_date) }
+                                                            { product ? `${item.new_price || 0.0} ${config.text.currency} ~ ${fix_date(item.create_date)}` : fix_date(item.create_date) }
                                                         
                                                         </div>
 
@@ -125,7 +136,7 @@ export default function Select ({ model, setModel, data, onChange, product, cate
                                                 
                                                 <div className="w-full flex justify-center items-center py-10 no-select">
 
-                                                    <p className='text-[.8rem]'>No data available .</p>
+                                                    <p className='text-[.8rem]'>{config.text.no_data}</p>
 
                                                 </div>
 

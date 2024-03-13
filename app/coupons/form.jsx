@@ -4,7 +4,7 @@ import { Dialog, Transition } from '@headlessui/react';
 import Loader from '@/app/component/loader';
 import { Fragment } from 'react';
 
-export default function Form_Coupon ({ data, setData, save, model, setModel, loader }) {
+export default function Form_Coupon ({ config, data, setData, save, model, setModel, loader }) {
 
     return (
 
@@ -31,7 +31,7 @@ export default function Form_Coupon ({ data, setData, save, model, setModel, loa
 
                                 <div className="bg-[#fbfbfb] py-3 text-lg font-medium ltr:pl-5 ltr:pr-[50px] rtl:pr-5 rtl:pl-[50px] dark:bg-[#121c2c]">
                                     
-                                    {data.id ? 'Edit Coupon' : 'Add Coupon'}
+                                    {data.id ? config.text.edit_coupon : config.text.add_coupon}
 
                                 </div>
 
@@ -40,12 +40,12 @@ export default function Form_Coupon ({ data, setData, save, model, setModel, loa
                                     <div className='flex justify-between lg:flex-row flex-col'>
 
                                         <div className='w-full ltr:lg:mr-6 rtl:lg:ml-6 mb-6'>
-                                            <label htmlFor="code" className='text-[.95rem] tracking-wide'>Code</label>
+                                            <label htmlFor="code" className='text-[.95rem] tracking-wide'>{config.text.code}</label>
                                             <input id="code" type="text" className="form-input mt-1" value={data.code || ''} onChange={(e) => setData({...data, code: e.target.value})} autoComplete='off'/>
                                         </div>
 
                                         <div className='w-full mb-6'>
-                                            <label htmlFor="discount" className='text-[.95rem] tracking-wide'>Discount %</label>
+                                            <label htmlFor="discount" className='text-[.95rem] tracking-wide'>{config.text.discount_}</label>
                                             <input id="discount" type="number" min="0" className="form-input mt-1" value={data.discount || 0} onChange={(e) => setData({...data, discount: e.target.value})}/>
                                         </div>
 
@@ -54,12 +54,12 @@ export default function Form_Coupon ({ data, setData, save, model, setModel, loa
                                     <div className='flex justify-between lg:flex-row flex-col mb-4'>
 
                                         <div className='w-full ltr:lg:mr-6 rtl:lg:ml-6 mb-6'>
-                                            <label htmlFor="date" className='text-[.95rem] tracking-wide'>Date</label>
+                                            <label htmlFor="date" className='text-[.95rem] tracking-wide'>{config.text.date}</label>
                                             <input id="date" type="text" className="form-input mt-1 default" value={fix_date(data.date || date())} readOnly/>
                                         </div>
 
                                         <div className='w-full mb-6'>
-                                            <label htmlFor="uses" className='text-[.95rem] tracking-wide'>Uses</label>
+                                            <label htmlFor="uses" className='text-[.95rem] tracking-wide'>{config.text.uses}</label>
                                             <input id="uses" type="number" min="0" className="form-input mt-1 default" value={data.uses || 0} readOnly/>
                                         </div>
                                         
@@ -79,7 +79,7 @@ export default function Form_Coupon ({ data, setData, save, model, setModel, loa
 
                                         </label>
 
-                                        <label htmlFor="active" className="ltr:pl-3 rtl:pr-3 pointer">Active</label>
+                                        <label htmlFor="active" className="ltr:pl-3 rtl:pr-3 pointer">{config.text.active}</label>
 
                                     </div>
                     
@@ -88,11 +88,11 @@ export default function Form_Coupon ({ data, setData, save, model, setModel, loa
                                     <div className="mt-6 mb-1 flex items-center justify-end">
 
                                         <button type="button" className="btn btn-outline-danger" onClick={() => setModel(false)}>
-                                            Cancel
+                                            {config.text.cancel}
                                         </button>
 
                                         <button type="button" className="btn btn-primary ltr:ml-4 rtl:mr-4" onClick={save}>
-                                            {data.id ? 'Update' : 'Submit'}
+                                            {data.id ? config.text.update : config.text.submit}
                                         </button>
 
                                     </div>

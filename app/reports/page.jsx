@@ -16,6 +16,7 @@ export default function Reports () {
         value = value.split("_");
         if ( value.length === 1 ) value = capitalize(value[0]);
         if ( value.length === 2 ) value = `${capitalize(value[0])} ${capitalize(value[1])}`;
+        if ( value.length === 3 ) value = `${capitalize(value[0])} ${capitalize(value[1])} ${capitalize(value[2])}`;
         return value
 
     }
@@ -23,11 +24,11 @@ export default function Reports () {
         
         return [
             {
-                accessor: 'id', sortable: true, title: 'ID',
+                accessor: 'id', sortable: true, title: 'id',
                 render: ({ id }) => <div className="font-semibold select-text default">{id}</div>,
             },
             {
-                accessor: 'user', sortable: true, title: 'User',
+                accessor: 'user', sortable: true, title: 'user',
                 render: ({ user, id }) => 
                     user.id ?
                     config.user.id === user.id ?
@@ -56,36 +57,38 @@ export default function Reports () {
                 ,
             },
             {
-                accessor: 'type', sortable: true, title: 'Type',
+                accessor: 'type', sortable: true, title: 'action',
                 render: ({ type, id }) => <div className="font-semibold select-text default">{fix_value(type)}</div>,
             },
             {
-                accessor: 'ip', sortable: true, title: 'IP',
+                accessor: 'ip', sortable: true, title: 'ip',
                 render: ({ ip, id }) => <div className="font-semibold select-text default truncate max-w-[10rem]">{ip}</div>,
             },
             {
-                accessor: 'host', sortable: true, title: 'Device',
+                accessor: 'host', sortable: true, title: 'device',
                 render: ({ host, id }) => <div className="font-semibold select-text default truncate max-w-[10rem]">{host}</div>,
             },
             {
-                accessor: 'item', sortable: true, title: 'Link',
+                accessor: 'item', sortable: true, title: 'url',
                 render: ({ item, id }) =>
                 item.link ?
-                    <div className="flex items-center font-semibold pointer hover:text-primary underline" 
+                    <div className="flex items-center font-semibold pointer hover:text-primary hover:underline" 
                         onClick={() => router.push(item.link)}>
-                        <div className="font-semibold select-text truncate max-w-[12rem]">{item.name}</div>
-                    </div> : <div className="font-semibold select-text">--</div>
+                        <div className="font-semibold select-text truncate max-w-[12rem]">( {item.action_id} ) - {item.name}</div>
+                    </div>
+                : item.action_id ? <div className="font-semibold select-text">( {item.action_id} ) - ?</div>
+                : <div className="font-semibold select-text">--</div> 
                 ,
             },
             {
-                accessor: 'amount', sortable: true, title: 'Amount',
+                accessor: 'amount', sortable: true, title: 'amount',
                 render: ({ amount, id }) => 
                 amount ?
                     <div className="font-semibold select-text default">{fix_number(amount)} RAS</div> :
                     <div className="font-semibold select-text default">--</div>,
             },
             {
-                accessor: 'status', sortable: true, title: 'Status',
+                accessor: 'status', sortable: true, title: 'status',
                 render: ({ status, id }) => 
                 status === 1 ?
                     <span className='badge badge-outline-warning'>Pending</span>
@@ -100,7 +103,7 @@ export default function Reports () {
                 ,
             },
             {
-                accessor: 'date', sortable: true, title: 'Date',
+                accessor: 'date', sortable: true, title: 'date',
                 render: ({ date, id }) => <div className="font-semibold select-text default">{fix_date(date)}</div>,
             },
         ];
@@ -108,13 +111,13 @@ export default function Reports () {
     }
     const get = async() => {
 
-        const response = await api('report', {user: config.user.id});
+        const response = await api('report', {token: config.user.token});
         setData(response.data || []);
 
     }
     const delete_ = async( ids ) => {
 
-        await api('report/delete', {ids: JSON.stringify(ids), user: config.user.id});
+        await api('report/delete', {ids: JSON.stringify(ids), token: config.user.token});
 
     }
     const search = ( items, query ) => {
@@ -147,7 +150,7 @@ export default function Reports () {
     }
     useEffect(() => {
 
-        document.title = "All Reports";
+        document.title = config.text.all_reports;
         get();
 
     }, []);
@@ -156,7 +159,7 @@ export default function Reports () {
 
         <Table 
             columns={columns} data={data} delete_={delete_} search={search} async_search={false}
-            no_delete={!data.length || !config.user.super} no_search={!data.length} no_add={true} no_edit={true}
+            no_delete={!data.length || !config.user.reports} no_search={!data.length} no_add={true} no_edit={true}
         />
 
     );

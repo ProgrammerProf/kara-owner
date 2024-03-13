@@ -1,5 +1,5 @@
 "use client";
-import { toggle_dir, toggle_theme, toggle_lang, toggle_menu, toggle_layout, toggle_animation, toggle_nav, toggle_semidark, toggle_side, toggle_user } from '@/public/script/store';
+import { toggle_dir, toggle_theme, toggle_lang, toggle_menu, toggle_layout, toggle_animation, toggle_nav, toggle_semidark, toggle_side, toggle_user, toggle_text } from '@/public/script/store';
 import { api, date, get_session, print } from '@/public/script/public';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -26,31 +26,22 @@ export default function DefaultLayout ({ children }) {
 
     const active_user = async() => {
         
-        const response = await api('auth/user', {user: get_session('user')?.id || 0});
-        if ( response.user?.id ) dispatch(toggle_user({...response.user, active: true, update: date()}));
+        if ( !get_session('user')?.token ) return;
+        const response = await api('auth/user', {token: get_session('user')?.token});
+        if ( response.user?.token ) dispatch(toggle_user({...response.user, logged: get_session('user')?.logged || false, update: date()}));
         else dispatch(toggle_user({}));
-        
+
     }
     const access_url = () => {
 
         let access = 
-        (pathname === '/mail' && !config.user.mail) ||
         (pathname === '/chat' && !config.user.chat) ||
-        (pathname === '/categories/add' && !config.user.add_categories) ||
         (pathname === '/properties/add' && !config.user.add_products) ||
         (pathname === '/bookings/add' && !config.user.add_bookings) ||
-        (pathname === '/owners/add' && !config.user.add_owners) ||
-        (pathname === '/guests/add' && !config.user.add_guests) ||
-        (pathname === '/admins/add' && !config.user.supervisor) ||
-        (pathname.includes('/categories') && !config.user.see_categories) || 
         (pathname.includes('/properties') && !config.user.see_products) ||
         (pathname.includes('/bookings') && !config.user.see_bookings) ||
         (pathname.includes('/coupons') && !config.user.see_coupons) ||
-        (pathname.includes('/owners') && !config.user.see_owners) ||
-        (pathname.includes('/guests') && !config.user.see_guests) ||
-        (pathname.includes('/admins') && !config.user.supervisor) ||
-        // (pathname.includes('/settings') && !config.user.super) ||
-        (pathname.includes('/reports') && !config.user.super) ? false : true;
+        (pathname.includes('/reports') && !config.user.reports) ? false : true;
 
         return access
 
@@ -66,24 +57,26 @@ export default function DefaultLayout ({ children }) {
     }
     useEffect(() => {
 
-        active_link();
-        setTimeout(() => { setLoader(false); }, 500);
+        setTimeout(() => { setLoader(false); active_link(); }, 500);
         dispatch(toggle_user(get_session('user')));
-
-        if (window.innerWidth < 1024 && config.side) dispatch(toggle_side());
         if ( started ) { setAnimation(false); setTimeout(_ => setAnimation(config.animation)); }
         else setStarted(true);
 
-        if ( !get_session('user')?.id ) return router.replace('/auth/login');
-        if ( get_session('user')?.id && !get_session('user')?.active ) return router.replace('/auth/lock');
+        if (window.innerWidth < 1024 && config.side) dispatch(toggle_side());
+        if ( !get_session('user')?.token && !['/auth/login', '/auth/register', '/auth/recovery'].includes(pathname) && !(pathname.includes('/auth/change/') && pathname.split('/').length === 4) ) return router.replace('/auth/login');
+        if ( get_session('user')?.token && !get_session('user')?.logged && !['/auth/lock', '/auth/recovery'].includes(pathname) && !(pathname.includes('/auth/change/') && pathname.split('/').length === 4) ) return router.replace('/auth/lock');
         active_user();
 
     }, [pathname]);
     useEffect(() => {
 
-        setAuth(get_session('user')?.id ? true : false);
-        setActive((get_session('user')?.id && get_session('user')?.active) ? true : false);
+        setAuth(get_session('user')?.token ? true : false);
+        setActive((get_session('user')?.token && get_session('user')?.logged) ? true : false);
         dispatch(toggle_user(get_session('user')));
+
+    }, [config.user.update]);
+    useEffect(() => {
+
         dispatch(toggle_theme(localStorage.getItem('theme') || config.theme));
         dispatch(toggle_menu(localStorage.getItem('menu') || config.menu));
         dispatch(toggle_layout(localStorage.getItem('layout') || config.layout));
@@ -95,11 +88,11 @@ export default function DefaultLayout ({ children }) {
         setAnimation(config.animation);
         active_link();
 
-    }, [dispatch, config.theme, config.menu, config.layout, config.dir, config.animation, config.nav, config.lang, config.semidark, config.user.update]);
+    }, [dispatch, config.theme, config.menu, config.layout, config.dir, config.animation, config.nav, config.lang, config.semidark]);
 
     return (
 
-        <div className={`${(config.side && 'toggle-sidebar') || ''} ${config.menu} ${config.layout} ${config.dir} main-section relative font-nunito text-sm font-normal antialiased`}>
+        <div className={`${(config.side && 'toggle-sidebar') || ''} ${config.menu} ${active ? config.layout : 'full'} ${config.dir} main-section relative font-nunito text-sm font-normal antialiased`}>
             {
                 active ?
                 <div className="relative">
@@ -132,14 +125,28 @@ export default function DefaultLayout ({ children }) {
 
                     { loader && <Loader fixed bg/> }
 
+                    <Setting />
+
                     <div className={`${config.nav} main-container min-h-screen text-black dark:text-white-dark`}>
 
                         <div className="main-content">
 
                             <Header />
-                        
-                            { loader ? '' : <div className={`${animation} animate__animated px-6`}>{ auth ? <Lockscreen /> : <Login /> }</div> }
 
+                            {
+                                loader ? '' : auth ?
+                                <div className={`${animation} animate__animated px-6`}>
+
+                                    { pathname === '/auth/recovery' || (pathname.includes('/auth/change/') && pathname.split('/').length === 4) ? children : <Lockscreen/> }
+
+                                </div> :
+                                <div className={`${animation} animate__animated px-6`}>
+
+                                    { pathname === '/auth/register' || pathname === '/auth/recovery' || (pathname.includes('/auth/change/') && pathname.split('/').length === 4) ? children : <Login/> }
+
+                                </div>
+                            }
+                            
                         </div>
 
                     </div>

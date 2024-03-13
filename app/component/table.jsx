@@ -1,5 +1,5 @@
 "use client";
-import { alert_msg } from '@/public/script/public';
+import { alert_msg, lower, print } from '@/public/script/public';
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { DataTable } from 'mantine-datatable';
@@ -8,7 +8,9 @@ import Loader from '@/app/component/loader';
 
 export default function Table ({ columns, data, add, edit, delete_, search, async_search, no_search, no_add, no_edit, no_delete, btn_name }) {
 
+    const config = useSelector((state) => state.config);
     const isDark = useSelector((state) => state.config.theme) === 'dark' ? true : false;
+    const isRtl = useSelector((state) => state.config.lang) === 'ar' ? true : false;
     const [page, setPage] = useState(1);
     const PAGE_SIZES = [10, 20, 30, 50, 100];
     const [pageSize, setPageSize] = useState(PAGE_SIZES[0]);
@@ -33,7 +35,7 @@ export default function Table ({ columns, data, add, edit, delete_, search, asyn
         if ( id ) selectedRows = [{id: id}];
         const ids = selectedRows.map(_ =>  _.id);
 
-        if ( confirm(`Are you sure want to delete selected rows ( ${ids.length} ) ?`) ) {
+        if ( confirm(`${config.text.delete_selected_rows} ( ${ids.length} ) ${config.text.question_mark}`) ) {
 
             setLoader(true);
 
@@ -47,12 +49,12 @@ export default function Table ({ columns, data, add, edit, delete_, search, asyn
                 setQuery('');
                 setPage(1);
                 check_empty(result);
-                alert_msg(`${ids.length} Items deleted successfully`);
+                alert_msg(`${ids.length} ${config.text.items} ${config.text.deleted_successfully}`);
 
             }
             else {
 
-                alert_msg('Error, something is went wrong !', 'error');
+                alert_msg(config.text.alert_error, 'error');
 
             }
 
@@ -94,11 +96,6 @@ export default function Table ({ columns, data, add, edit, delete_, search, asyn
         setPage(1);
 
     }, [sortStatus]);
-    useEffect(() => {
-
-        document.title = 'Categories';
-
-    }, []);
 
     return (
 
@@ -121,7 +118,7 @@ export default function Table ({ columns, data, add, edit, delete_, search, asyn
                                     <path opacity="0.5" stroke="currentColor" strokeWidth="1.5" d="M6.5 6C6.55588 6 6.58382 6 6.60915 5.99936C7.43259 5.97849 8.15902 5.45491 8.43922 4.68032C8.44784 4.65649 8.45667 4.62999 8.47434 4.57697L8.57143 4.28571C8.65431 4.03708 8.69575 3.91276 8.75071 3.8072C8.97001 3.38607 9.37574 3.09364 9.84461 3.01877C9.96213 3 10.0932 3 10.3553 3H13.6447C13.9068 3 14.0379 3 14.1554 3.01877C14.6243 3.09364 15.03 3.38607 15.2493 3.8072C15.3043 3.91276 15.3457 4.03708 15.4286 4.28571L15.5257 4.57697C15.5433 4.62992 15.5522 4.65651 15.5608 4.68032C15.841 5.45491 16.5674 5.97849 17.3909 5.99936C17.4162 6 17.4441 6 17.5 6"></path>
                                 </svg>
 
-                                Delete
+                                <span className='font-thin tracking-wide'>{config.text.delete}</span>
 
                             </button>
                         }
@@ -134,7 +131,7 @@ export default function Table ({ columns, data, add, edit, delete_, search, asyn
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
                                 </svg>
 
-                                {btn_name || 'Add New'}
+                                <span className='font-thin tracking-wide'>{config.text[btn_name] || config.text.add_new}</span>
 
                             </button>
                         }
@@ -144,7 +141,7 @@ export default function Table ({ columns, data, add, edit, delete_, search, asyn
                         !no_search &&
                         <div className="ltr:ml-auto rtl:mr-auto">
 
-                            <input type="text" className="form-input w-auto" placeholder="Search" value={query} style={{width: '20rem'}} 
+                            <input type="text" className="form-input w-auto" placeholder={config.text.search} value={query} style={{width: '20rem'}} 
                             onChange={(e) => setQuery(e.target.value)} 
                             onKeyUp={(e) => { async_search ? ( e.key === 'Enter' && searchData() ) : searchData() }}/>
                         
@@ -160,22 +157,27 @@ export default function Table ({ columns, data, add, edit, delete_, search, asyn
                             className={`${isDark} table-hover select-none whitespace-nowrap`}
                             records={records}
                             columns={[
-                                ...columns(),
+                                ...columns().map(_ => {
+                                    _.textAlignment = isRtl ? 'right' : 'left';
+                                    _.title = config.text[lower(_.title)] || ''
+                                    return _;
+                                }),
                                 {
                                     accessor: 'action', sortable: false,
-                                    title: 'Actions', textAlignment: 'left',
+                                    title: config.text.actions,
+                                    textAlignment: isRtl ? 'right' : 'left',
                                     render: ({ id }) => (
                                         <div className="mx-auto flex w-full items-center gap-3">
                                             {
                                                 !no_edit &&
                                                 <button type="button" onClick={() => edit(id)} className="btn text-primary border-primary shadow-none hover:bg-primary hover:text-white px-3 py-[5px] text-[.8rem] tracking-wide">
-                                                    Edit
+                                                    {config.text.edit}
                                                 </button>
                                             }
                                             {
                                                 !no_delete &&
                                                 <button type="button" onClick={() => deleteRow(id)} className="btn text-danger border-danger shadow-none hover:bg-danger hover:text-white px-3 py-[5px] text-[.8rem] tracking-wide">
-                                                    Delete
+                                                    {config.text.delete}
                                                 </button>
                                             }
                                         </div>
@@ -193,7 +195,7 @@ export default function Table ({ columns, data, add, edit, delete_, search, asyn
                             onSortStatusChange={setSortStatus}
                             selectedRecords={selectedRecords}
                             onSelectedRecordsChange={setSelectedRecords}
-                            paginationText={({ from, to, totalRecords }) => `Showing  ${from} - ${to} of ${totalRecords}`}
+                            paginationText={({ from, to, totalRecords }) => `${config.text.showing}  ${from} - ${to} ${config.text.of} ${totalRecords}`}
                         />
                     }
                 </div>

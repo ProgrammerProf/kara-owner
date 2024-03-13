@@ -15,11 +15,11 @@ export default function Property () {
         
         return [
             {
-                accessor: 'invoice', sortable: true, title: 'ID',
+                accessor: 'invoice', sortable: true, title: 'id',
                 render: ({ id }) => <div className="font-semibold select-text default">{id}</div>,
             },
             {
-                accessor: 'details', sortable: true,
+                accessor: 'details', sortable: true, title: 'name',
                 render: ({ details, id }) => (
                     <div className="flex items-center font-semibold">
                         <div className="h-7 w-7 rounded-[.5rem] overflow-hidden layer-div ltr:mr-3 rtl:ml-3">
@@ -34,13 +34,12 @@ export default function Property () {
                 ),
             },
             {
-                accessor: 'category', sortable: true,
+                accessor: 'category', sortable: true, title: 'category',
                 render: ({ category, id }) => (
                     <div>
                         {
                             category ?
-                            <div className="flex items-center font-semibold pointer hover:text-primary hover:underline" 
-                                onClick={() => router.push(`/categories/edit/${category.id}`)}>
+                            <div className="flex items-center font-semibold default">
                                 <div className="h-7 w-7 rounded-[.5rem] overflow-hidden ltr:mr-3 rtl:ml-3">
                                     <img 
                                         src={`${host}/C${category.id}`} className="h-full w-full rounded-[.5rem] object-cover" 
@@ -56,38 +55,19 @@ export default function Property () {
                 ),
             },
             {
-                accessor: 'owner', sortable: true,
-                render: ({ owner, id }) => (
-                    <div>
-                        {
-                            owner ?
-                            <div className="flex items-center font-semibold pointer hover:text-primary hover:underline" 
-                                onClick={() => router.push(`/owners/edit/${owner.id}`)}>
-                                <div className="h-7 w-7 rounded-full overflow-hidden ltr:mr-3 rtl:ml-3 mt-[-2px]">
-                                    <img className="h-full w-full rounded-full object-cover" src={`${host}/U${owner.id}`} 
-                                    onError={(e) => e.target.src='/media/public/user_icon.png'}/>
-                                </div>
-                                <div className="font-semibold select-text truncate max-w-[10rem]">{owner.name}</div>
-                            </div> :
-                            <div className="font-semibold select-text default">--</div>
-                        }
-                    </div>
-                ),
-            },
-            {
-                accessor: 'new_price', sortable: true, title: 'Price',
+                accessor: 'new_price', sortable: true, title: 'price',
                 render: ({ new_price, id }) => <div className="font-semibold select-text default">{new_price} RAS</div>,
             },
             {
-                accessor: 'bookings', sortable: true,
+                accessor: 'bookings', sortable: true, title: 'bookings',
                 render: ({ bookings, id }) => <div className="font-semibold select-text default">{bookings}</div>,
             },
             {
-                accessor: 'active', sortable: true, title: 'Status',
+                accessor: 'active', sortable: true, title: 'status',
                 render: ({ active, id }) => <span className={`badge badge-outline-${active ? 'success' : 'danger'}`}>{active ? 'Active' : 'Stopped'}</span>,
             },
             {
-                accessor: 'create_date', sortable: true, title: 'Date',
+                accessor: 'create_date', sortable: true, title: 'date',
                 render: ({ create_date, id }) => <div className="font-semibold select-text default">{fix_date(create_date)}</div>,
             },
         ];
@@ -95,13 +75,13 @@ export default function Property () {
     }
     const get = async() => {
 
-        const response = await api('product', {user: config.user.id});
+        const response = await api('product', {token: config.user.token});
         setData(response.data || []);
 
     }
     const delete_ = async( ids ) => {
 
-        const response = await api('product/delete', {ids: JSON.stringify(ids), user: config.user.id});
+        const response = await api('product/delete', {ids: JSON.stringify(ids), token: config.user.token});
         return response;
         
     }
@@ -123,7 +103,7 @@ export default function Property () {
     }
     useEffect(() => {
 
-        document.title = "All Property";
+        document.title = config.text.all_products;
         get();
 
     }, []);
@@ -131,7 +111,7 @@ export default function Property () {
     return (
 
         <Table 
-            columns={columns} data={data} delete_={delete_} search={search} async_search={false} btn_name="Add Property"
+            columns={columns} data={data} delete_={delete_} search={search} async_search={false} btn_name="add_product"
             add={() => router.push(`/properties/add`)} edit={(id) => router.push(`/properties/edit/${id}`)} 
             no_delete={!data.length || !config.user.delete_products} no_search={!data.length} 
             no_add={!config.user.add_products} no_edit={!config.user.see_products}

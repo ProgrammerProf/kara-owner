@@ -1,5 +1,5 @@
 "use client";
-import { api, date as dt, alert_msg, matching, fix_date } from '@/public/script/public';
+import { api, date as dt, alert_msg, matching, fix_date, print } from '@/public/script/public';
 import Table from "@/app/component/table";
 import Form from "@/app/coupons/form";
 import { Fragment, useEffect, useState } from 'react';
@@ -17,11 +17,11 @@ export default function Coupons () {
         
         return [
             {
-                accessor: 'id', sortable: true, title: 'ID',
+                accessor: 'id', sortable: true, title: 'id',
                 render: ({ id }) => <div className="font-semibold select-text default">{id}</div>
             },
             {
-                accessor: 'code', sortable: true, title: 'Coupon',
+                accessor: 'code', sortable: true, title: 'coupon',
                 render: ({ code, id }) => (
                     <div className="flex items-center font-semibold default">
                         <div className="ltr:mr-2 rtl:ml-2">
@@ -61,19 +61,21 @@ export default function Coupons () {
                 ),
             },
             {
-                accessor: 'discount', sortable: true, title: 'Discount %',
+                accessor: 'discount', sortable: true, title: 'discount_',
                 render: ({ discount, id }) => <div className="font-semibold select-text default">{discount || 0}</div>
             },
             {
-                accessor: 'uses', sortable: true, title: 'Uses',
+                accessor: 'uses', sortable: true, title: 'uses',
                 render: ({ uses, id }) => <div className="font-semibold select-text default">{uses || 0}</div>
             },
             {
-                accessor: 'active', sortable: true, title: 'Status',
-                render: ({ active, id }) => <span className={`badge badge-outline-${active ? 'success' : 'danger'}`}>{active ? 'Active' : 'Stopped'}</span>
+                accessor: 'active', sortable: true, title: 'status',
+                render: ({ active, id }) => <span className={`badge badge-outline-${active ? 'success' : 'danger'}`}>
+                    {active ? config.text.active : config.text.stopped}
+                </span>
             },
             {
-                accessor: 'create_date', sortable: true, title: 'Date',
+                accessor: 'create_date', sortable: true, title: 'date',
                 render: ({ create_date, id }) => <div className="font-semibold select-text default">{fix_date(create_date || dt())}</div>
             },
         ];
@@ -81,13 +83,14 @@ export default function Coupons () {
     }
     const get = async() => {
 
-        const response = await api('coupon', {user: config.user.id});
+        const response = await api('coupon', {token: config.user.token});
         setData(response.data || []);
 
     }
     const delete_ = async( ids ) => {
 
-        await api('coupon/delete', {ids: JSON.stringify(ids), user: config.user.id});
+        setData(data.filter(_ => !ids.includes(_.id)));
+        await api('coupon/delete', {ids: JSON.stringify(ids), token: config.user.token});
 
     }
     const search = ( items, query ) => {
@@ -107,32 +110,32 @@ export default function Coupons () {
     }
     const save_coupon = async() => {
         
-        if ( !coupon.code ) return alert_msg('Error, coupon code required !', 'error');
+        if ( !coupon.code ) return alert_msg(config.text.coupon_required, 'error');
         setLoader(true);
 
-        const response = await api(`coupon/${coupon.id ? 'edit' : 'add'}`, {...coupon, user: config.user.id});
+        const response = await api(`coupon/${coupon.id ? 'edit' : 'add'}`, {...coupon, token: config.user.token});
         setLoader(false);
-        if ( !response.status ) return alert_msg('Error, something went wrong !', 'error');
-        if ( response.status === 'exists' ) return alert_msg('Error, this coupon is already exists !', 'error');
+        if ( !response.status ) return alert_msg(config.text.alert_error, 'error');
+        if ( response.status === 'exists' ) return alert_msg(config.text.error_coupon, 'error');
 
         if ( coupon.id ) {
             let new_data = data.map(_ => _.id === coupon.id ? {...coupon, discount: parseFloat(coupon.discount).toFixed(2)} : _);
             setData([...new_data]);
             setModel(false);
-            alert_msg(`Coupon ( ${coupon.id} ) updated successfully`);
+            alert_msg(`${config.text.item} ( ${coupon.id} ) - ${config.text.updated_successfully}`);
         }
         else {
             let new_data = data;
             new_data.unshift({...coupon, id: response.id});
             setData([...new_data]);
             setModel(false);
-            alert_msg('New coupon added successfully');
+            alert_msg(config.text.new_item_added);
         }
 
     };
     useEffect(() => {
 
-        document.title = "All Coupons";
+        document.title = config.text.all_coupons || '';
         get();
 
     }, []);
@@ -144,12 +147,12 @@ export default function Coupons () {
             <Table 
                 columns={columns} data={data} delete_={delete_} search={search} async_search={false} 
                 no_delete={!data.length || !config.user.delete_coupons} no_search={!data.length} 
-                no_add={!config.user.add_coupons} no_edit={!config.user.see_coupons} btn_name="Add Coupon"
-                add={() => { setCoupon({}); setModel(true); setLoader(false); }} 
+                no_add={!config.user.add_coupons} no_edit={!config.user.see_coupons} btn_name="add_coupon"
+                add={() => { setCoupon({active: true}); setModel(true); setLoader(false); }} 
                 edit={(id) => { setCoupon(data.find((_ => _.id === id))); setModel(true); setLoader(false); }} 
             />
 
-            <Form data={coupon} setData={setCoupon} save={save_coupon} model={model} setModel={setModel} loader={loader}/>
+            <Form config={config} data={coupon} setData={setCoupon} save={save_coupon} model={model} setModel={setModel} loader={loader}/>
 
         </Fragment>
 

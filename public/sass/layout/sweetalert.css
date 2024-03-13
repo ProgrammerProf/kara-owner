@@ -19,7 +19,7 @@
   width: 100%;
   color: #3b3f5c;
   font-size: 24px;
-  @apply ltr:!pr-10 rtl:!pl-10;
+  /* @apply ltr:!pr-10 rtl:!pl-10; */
 }
 
 .swal2-popup .swal2-styled {

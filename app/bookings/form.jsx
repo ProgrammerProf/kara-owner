@@ -1,5 +1,5 @@
 "use client";
-import { api, date, alert_msg, fix_date } from '@/public/script/public';
+import { api, date, alert_msg, fix_date, copy } from '@/public/script/public';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
@@ -20,7 +20,7 @@ export default function Form_Booking ({ id }) {
 
     const default_item = async() => {
 
-        const response = await api('booking/default', {user: config.user.id});
+        const response = await api('booking/default', {token: config.user.token});
 
         setData({
             id: 0,
@@ -52,43 +52,44 @@ export default function Form_Booking ({ id }) {
     }
     const get_item = async() => {
 
-        const response = await api('booking', {id: id, user: config.user.id});
+        const response = await api('booking', {id: id, token: config.user.token});
         if ( !response.data?.id ) return router.replace('/bookings');
         setData(response.data);
         setLoader(false);
+        document.title = `${config.text.edit_booking} | ${response.data.user_name || ''}`;
 
     }
     const save_item = async() => {
         
-        if ( !data.user_id ) return alert_msg('Error, select user to complete booking !', 'error');
-        if ( !data.product_id ) return alert_msg('Error, select product to complete booking !', 'error');
+        if ( !data.user_id ) return alert_msg(config.text.user_required, 'error');
+        if ( !data.product_id ) return alert_msg(config.text.product_required, 'error');
         
         setLoader(true);
-        const response = await api(`booking/${id ? 'edit' : 'add'}`, {...data, user: config.user.id});
+        const response = await api(`booking/${id ? 'edit' : 'add'}`, {...data, token: config.user.token});
 
         if ( response.status === true ) {
-            if ( id ) alert_msg(`Booking ( ${id} ) updated successfully`);
-            else alert_msg(`New booking added successfully`);
+            if ( id ) alert_msg(`${config.text.item} ( ${id} ) - ${config.text.updated_successfully}`);
+            else alert_msg(config.text.new_item_added);
             return router.replace('/bookings')
         }
-        else alert_msg('Error, something is went wrong !', 'error');
+        else alert_msg(config.text.alert_error, 'error');
 
         setLoader(false);
 
     }
     const delete_item = async() => {
 
-        if ( !confirm('Are you sure to delete this booking ?') ) return;
+        if ( !confirm(config.text.ask_delete_item) ) return;
 
         setLoader(true);
-        const response = await api('booking/delete', {ids: JSON.stringify([id]), user: config.user.id});
+        const response = await api('booking/delete', {ids: JSON.stringify([id]), token: config.user.token});
 
         if ( response.status ) {
-            alert_msg(`Booking ( ${id} ) has been deleted successfully`);
+            alert_msg(`${config.text.item} ( ${id} ) ${config.text.deleted_successfully}`);
             return router.replace('/bookings');
         }
         else {
-            alert_msg('Error, something is went wrong !', 'error');
+            alert_msg(config.text.alert_error, 'error');
             setLoader(false);
         }
 
@@ -115,7 +116,7 @@ export default function Form_Booking ({ id }) {
     }, [data.product_id, data.coupon_id]);
     useEffect(() => {
 
-        document.title = id ? `Edit Booking | ${data.user_name || ''}` : 'Add Booking';
+        document.title = id ? config.text.edit_booking : config.text.add_booking;
         setMenu(localStorage.getItem('menu'));
         id ? get_item() : default_item();
 
@@ -141,16 +142,16 @@ export default function Form_Booking ({ id }) {
                                         <div className="flex items-center relative mb-5">
                                             {
                                                 (resetUser && !id) &&
-                                                <div className="reset-icon flex" onClick={() => setData({...data, user_id: 0, user_name: ''})}>
+                                                <div className="reset-icon flex ltr:right-[.5rem] rtl:left-[.5rem]" onClick={() => setData({...data, user_id: 0, user_name: ''})}>
                                                     <span className="material-symbols-outlined icon">close</span>
                                                 </div>
                                             }
-                                            <label htmlFor="user" className="ltr:mr-2 rtl:ml-2 w-1/4 mb-0">User</label>
+                                            <label htmlFor="user" className="ltr:mr-2 rtl:ml-2 w-1/4 mb-0">{config.text.user}</label>
                                             <input id="user" type="text" value={data.user_name || '-'} onClick={() => setUserMenu(true)} className={`form-input flex-1 ${id ? 'default' : 'pointer'}`} readOnly/>
                                         </div>
 
                                         <div className="flex items-center relative">
-                                            <label htmlFor="coupon" className="ltr:mr-2 rtl:ml-2 w-1/4 mb-0">Coupon</label>
+                                            <label htmlFor="coupon" className="ltr:mr-2 rtl:ml-2 w-1/4 mb-0">{config.text.coupon}</label>
                                             {
                                                 id ?
                                                 <input id="coupon" type="text" value={data.coupon_code || '-'}  className='form-input flex-1 default' readOnly/>
@@ -169,16 +170,16 @@ export default function Form_Booking ({ id }) {
                                         <div className="flex items-center relative mb-5">
                                             {
                                                 (resetProperty && !id) &&
-                                                <div className="reset-icon flex" onClick={() => setData({...data, product_id: 0, product_name: ''})}>
+                                                <div className="reset-icon flex ltr:right-[.5rem] rtl:left-[.5rem]" onClick={() => setData({...data, product_id: 0, product_name: ''})}>
                                                     <span className="material-symbols-outlined icon">close</span>
                                                 </div>
                                             }
-                                            <label htmlFor="property" className="w-1/4 mb-0 ltr:pl-3 rtl:pr-3">Property</label>
+                                            <label htmlFor="property" className="w-1/4 mb-0 ltr:pl-3 rtl:pr-3">{config.text.product}</label>
                                             <input id="property" type="text" value={data.product_name || '-'} onClick={() => setPropertyMenu(true)} className={`form-input flex-1 ${id ? 'default' : 'pointer'}`} readOnly/>
                                         </div>
                                         
                                         <div className="flex items-center relative">
-                                            <label htmlFor="price" className="w-1/4 mb-0 ltr:pl-3 rtl:pr-3">Price</label>
+                                            <label htmlFor="price" className="w-1/4 mb-0 ltr:pl-3 rtl:pr-3">{config.text.price}</label>
                                             <input id="price" type="number" value={data.price || 0} className="form-input flex-1 default" readOnly/>
                                         </div>
 
@@ -197,12 +198,12 @@ export default function Form_Booking ({ id }) {
                                     <div className="lg:w-1/2 w-full ltr:lg:mr-6 rtl:lg:ml-6 mb-4 div-2">
 
                                         <div className="flex items-center">
-                                            <label htmlFor="name" className="ltr:mr-2 rtl:ml-2 w-1/4 mb-0">Name</label>
+                                            <label htmlFor="name" className="ltr:mr-2 rtl:ml-2 w-1/4 mb-0">{config.text.name}</label>
                                             <input id="name" type="text" value={data.name || ''} onChange={(e) => setData({...data, name: e.target.value})} className="form-input flex-1"/>
                                         </div>
 
                                         <div className="flex items-center mt-5">
-                                            <label htmlFor="email" className="ltr:mr-2 rtl:ml-2 w-1/4 mb-0">E-mail</label>
+                                            <label htmlFor="email" className="ltr:mr-2 rtl:ml-2 w-1/4 mb-0">{config.text.email}</label>
                                             <input id="email" type="text" value={data.email || ''} onChange={(e) => setData({...data, email: e.target.value})} className="form-input flex-1"/>
                                         </div>
 
@@ -211,12 +212,12 @@ export default function Form_Booking ({ id }) {
                                     <div className="lg:w-1/2 w-full div-3">
                                         
                                         <div className="flex items-center">
-                                            <label htmlFor="phone" className="w-1/4 mb-0 ltr:pl-3 rtl:pr-3">Phone</label>
+                                            <label htmlFor="phone" className="w-1/4 mb-0 ltr:pl-3 rtl:pr-3">{config.text.phone}</label>
                                             <input id="phone" type="text" value={data.phone || ''} onChange={(e) => setData({...data, phone: e.target.value})} className="form-input flex-1"/>
                                         </div>
 
                                         <div className="flex items-center mt-5">
-                                            <label htmlFor="booking-date" className="w-1/4 mb-0 ltr:pl-3 rtl:pr-3">Date</label>
+                                            <label htmlFor="booking-date" className="w-1/4 mb-0 ltr:pl-3 rtl:pr-3">{config.text.date}</label>
                                             <input id="booking-date" type="date" value={data.booking_date || ''} onChange={(e) => setData({...data, booking_date: e.target.value})} className="form-input flex-1 default"/>
                                         </div>
 
@@ -228,7 +229,7 @@ export default function Form_Booking ({ id }) {
 
                             <div className="mt-2 px-4">
 
-                                <label htmlFor="address" className="mb-4">Address</label>
+                                <label htmlFor="address" className="mb-4">{config.text.address}</label>
                                 
                                 <textarea id="address" value={data.address || ''} onChange={(e) => setData({...data, address: e.target.value})} className="form-textarea min-h-[100px] no-resize"></textarea>
                             
@@ -236,7 +237,7 @@ export default function Form_Booking ({ id }) {
 
                             <div className="mt-4 px-4">
 
-                                <label htmlFor="notes" className="mb-4">Notes</label>
+                                <label htmlFor="notes" className="mb-4">{config.text.notes}</label>
                                 
                                 <textarea id="notes" value={data.notes || ''} onChange={(e) => setData({...data, notes: e.target.value})} className="form-textarea min-h-[80px] no-resize" rows="3"></textarea>
                             
@@ -270,7 +271,7 @@ export default function Form_Booking ({ id }) {
 
                                     <div>
 
-                                        <label htmlFor="create_date" className="mb-3">Date</label>
+                                        <label htmlFor="create_date" className="mb-3">{config.text.date}</label>
 
                                         <input id="create_date" type="text" value={fix_date(data.create_date)} className="form-input default" readOnly/>
 
@@ -278,7 +279,7 @@ export default function Form_Booking ({ id }) {
                                 
                                     <div>
 
-                                        <label htmlFor="status" className="mb-3">Status</label>
+                                        <label htmlFor="status" className="mb-3">{config.text.status}</label>
 
                                         <select id="status" value={data.status || '1'} onChange={(e) => setData({...data, status: e.target.value})} className="form-select flex-1 pointer">
                                             <option value="1">Pending</option>
@@ -288,6 +289,14 @@ export default function Form_Booking ({ id }) {
                                         </select>
                                     
                                     </div>
+
+                                </div>
+
+                                <div className='mt-5'>
+
+                                    <label htmlFor="secret" className="mb-3">{config.text.booking_key}</label>
+
+                                    <input id="secret" type="text" value={data.secret || '--'} onClick={(e) => { e.target.select(); copy(data.secret || '') }} className="form-input default" readOnly/>
 
                                 </div>
 
@@ -309,7 +318,7 @@ export default function Form_Booking ({ id }) {
 
                                         </label>
 
-                                        <label htmlFor="paid" className="ltr:pl-3 rtl:pr-3 pointer">Paid</label>
+                                        <label htmlFor="paid" className="ltr:pl-3 rtl:pr-3 pointer">{config.text.paid}</label>
 
                                     </div>
 
@@ -327,7 +336,7 @@ export default function Form_Booking ({ id }) {
 
                                         </label>
 
-                                        <label htmlFor="active" className="ltr:pl-3 rtl:pr-3 pointer">Active</label>
+                                        <label htmlFor="active" className="ltr:pl-3 rtl:pr-3 pointer">{config.text.active}</label>
 
                                     </div>
 
@@ -345,7 +354,7 @@ export default function Form_Booking ({ id }) {
                                             <path d="M17 22V21C17 19.1144 17 18.1716 16.4142 17.5858C15.8284 17 14.8856 17 13 17H11C9.11438 17 8.17157 17 7.58579 17.5858C7 18.1716 7 19.1144 7 21V22" stroke="currentColor" strokeWidth="1.5" />
                                             <path opacity="0.5" d="M7 8H13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                                         </svg>
-                                        <span>Save</span>
+                                        <span>{config.text.save}</span>
                                     </button>
                                     <button type="button" className="pointer btn btn-warning w-full gap-2" onClick={close_item}>
                                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 ltr:mr-2 rtl:ml-2">
@@ -353,7 +362,7 @@ export default function Form_Booking ({ id }) {
                                             <circle cx="12" cy="16" r="1" fill="currentColor"></circle>
                                             <path opacity="0.5" d="M7.84308 3.80211C9.8718 2.6007 10.8862 2 12 2C13.1138 2 14.1282 2.6007 16.1569 3.80211L16.8431 4.20846C18.8718 5.40987 19.8862 6.01057 20.4431 7C21 7.98943 21 9.19084 21 11.5937V12.4063C21 14.8092 21 16.0106 20.4431 17C19.8862 17.9894 18.8718 18.5901 16.8431 19.7915L16.1569 20.1979C14.1282 21.3993 13.1138 22 12 22C10.8862 22 9.8718 21.3993 7.84308 20.1979L7.15692 19.7915C5.1282 18.5901 4.11384 17.9894 3.55692 17C3 16.0106 3 14.8092 3 12.4063V11.5937C3 9.19084 3 7.98943 3.55692 7C4.11384 6.01057 5.1282 5.40987 7.15692 4.20846L7.84308 3.80211Z" stroke="currentColor" strokeWidth="1.5"></path>
                                         </svg>
-                                        <span>Cancel</span>
+                                        <span>{config.text.cancel}</span>
                                     </button>
                                     {
                                         id && config.user.delete_bookings?
@@ -365,7 +374,7 @@ export default function Form_Booking ({ id }) {
                                                 <path opacity="0.5" d="M9.5 11L10 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"></path>
                                                 <path opacity="0.5" d="M14.5 11L14 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"></path>
                                             </svg>
-                                            <span>Delete</span>
+                                            <span>{config.text.delete}</span>
                                         </button> : ''
                                     }
 

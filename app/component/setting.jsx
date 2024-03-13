@@ -1,11 +1,16 @@
 "use client";
-import { toggle_animation, toggle_layout, toggle_menu, toggle_nav, toggle_dir, toggle_theme, toggle_semidark, toggle_setting } from '@/public/script/store';
+import { toggle_animation, toggle_layout, toggle_menu, toggle_nav, toggle_dir, toggle_theme, toggle_setting, toggle_text } from '@/public/script/store';
 import { Fragment, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { usePathname } from 'next/navigation';
+import { set_session } from '@/public/script/public';
+import { English } from '@/public/script/langs/en';
+import { Arabic } from '@/public/script/langs/ar';
 
 export default function Setting () {
 
     const dispatch = useDispatch();
+    const pathname = usePathname();
     const config = useSelector((state) => state.config);
     const [button, setButton] = useState(false);
 
@@ -17,6 +22,26 @@ export default function Setting () {
     };
     useEffect(() => {
 
+        let lang = localStorage.getItem('lang');
+       
+        if ( lang === 'ar' ) {
+            dispatch(toggle_dir('rtl'));
+            document.querySelector('html').classList.add('ar');
+        }
+        else {
+            dispatch(toggle_dir('ltr'));
+            document.querySelector('html').classList.remove('ar');
+        }
+
+        let data = English;
+
+        if ( lang === 'ar' ) data = Arabic;
+        dispatch(toggle_text(data));
+        set_session('text', data);
+
+    }, [config.lang, pathname]);
+    useEffect(() => {
+
         window.addEventListener('scroll', function(){
 
             if (document.body.scrollTop > 50 || document.documentElement.scrollTop > 50) setButton(true);
@@ -26,6 +51,7 @@ export default function Setting () {
         });
 
     }, []);
+
     return (
 
         <Fragment>
@@ -47,7 +73,7 @@ export default function Setting () {
                                 </svg>
                             </button>
 
-                            <h4 className="mb-1 dark:text-white opacity-80 mt-[2px] tracking-wide text-[1rem]">Settings</h4>
+                            <h4 className="mb-1 dark:text-white opacity-80 mt-[2px] tracking-wide text-[1rem]">{config.text.settings}</h4>
 
                         </div>
 
@@ -55,7 +81,7 @@ export default function Setting () {
 
                             <div className="mb-3 rounded-md border border-dashed border-white-light px-4 py-5 dark:border-[#1b2e4b]">
 
-                                <h5 className="text-base leading-none dark:text-white">Theme</h5>
+                                <h5 className="text-base leading-none dark:text-white">{config.text.theme}</h5>
 
                                 <div className="mt-5 grid grid-cols-3 gap-2">
 
@@ -73,7 +99,7 @@ export default function Setting () {
                                             <path opacity="0.5" d="M19.7778 19.7773L17.5558 17.5551" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"></path>
                                         </svg>
                                       
-                                        Light
+                                        {config.text.light}
 
                                     </button>
 
@@ -83,7 +109,7 @@ export default function Setting () {
                                             <path fill="currentColor" d="M21.0672 11.8568L20.4253 11.469L21.0672 11.8568ZM12.1432 2.93276L11.7553 2.29085V2.29085L12.1432 2.93276ZM21.25 12C21.25 17.1086 17.1086 21.25 12 21.25V22.75C17.9371 22.75 22.75 17.9371 22.75 12H21.25ZM12 21.25C6.89137 21.25 2.75 17.1086 2.75 12H1.25C1.25 17.9371 6.06294 22.75 12 22.75V21.25ZM2.75 12C2.75 6.89137 6.89137 2.75 12 2.75V1.25C6.06294 1.25 1.25 6.06294 1.25 12H2.75ZM15.5 14.25C12.3244 14.25 9.75 11.6756 9.75 8.5H8.25C8.25 12.5041 11.4959 15.75 15.5 15.75V14.25ZM20.4253 11.469C19.4172 13.1373 17.5882 14.25 15.5 14.25V15.75C18.1349 15.75 20.4407 14.3439 21.7092 12.2447L20.4253 11.469ZM9.75 8.5C9.75 6.41182 10.8627 4.5828 12.531 3.57467L11.7553 2.29085C9.65609 3.5593 8.25 5.86509 8.25 8.5H9.75ZM12 2.75C11.9115 2.75 11.8077 2.71008 11.7324 2.63168C11.6686 2.56527 11.6538 2.50244 11.6503 2.47703C11.6461 2.44587 11.6482 2.35557 11.7553 2.29085L12.531 3.57467C13.0342 3.27065 13.196 2.71398 13.1368 2.27627C13.0754 1.82126 12.7166 1.25 12 1.25V2.75ZM21.7092 12.2447C21.6444 12.3518 21.5541 12.3539 21.523 12.3497C21.4976 12.3462 21.4347 12.3314 21.3683 12.2676C21.2899 12.1923 21.25 12.0885 21.25 12H22.75C22.75 11.2834 22.1787 10.9246 21.7237 10.8632C21.286 10.804 20.7293 10.9658 20.4253 11.469L21.7092 12.2447Z"></path>
                                         </svg>
 
-                                        Dark
+                                        {config.text.dark}
 
                                     </button>
 
@@ -94,7 +120,7 @@ export default function Setting () {
                                             <path stroke="currentColor" strokeWidth="1.5" d="M9.94955 16.0503C10.8806 15.1192 11.3461 14.6537 11.9209 14.6234C11.9735 14.6206 12.0261 14.6206 12.0787 14.6234C12.6535 14.6537 13.119 15.1192 14.0501 16.0503C16.0759 18.0761 17.0888 19.089 16.8053 19.963C16.7809 20.0381 16.7506 20.1112 16.7147 20.1815C16.2973 21 14.8648 21 11.9998 21C9.13482 21 7.70233 21 7.28489 20.1815C7.249 20.1112 7.21873 20.0381 7.19436 19.963C6.91078 19.089 7.92371 18.0761 9.94955 16.0503Z"/>
                                         </svg>
 
-                                        System
+                                        {config.text.system}
 
                                     </button>
 
@@ -104,20 +130,20 @@ export default function Setting () {
 
                             <div className="mb-3 rounded-md border border-dashed border-white-light px-4 py-5 dark:border-[#1b2e4b]">
 
-                                <h5 className="text-base leading-none dark:text-white">Navigation</h5>
+                                <h5 className="text-base leading-none dark:text-white">{config.text.navigation}</h5>
 
                                 <div className="mt-5 grid grid-cols-3 gap-2">
 
                                     <button type="button" className={`${config.menu === 'horizontal' ? 'btn-primary' : 'btn-outline-primary'} btn`} onClick={() => dispatch(toggle_menu('horizontal'))}>
-                                        Horizontal
+                                        {config.text.horizontal}
                                     </button>
 
                                     <button type="button" className={`${config.menu === 'vertical' ? 'btn-primary' : 'btn-outline-primary'} btn`} onClick={() => dispatch(toggle_menu('vertical'))}>
-                                        Vertical
+                                        {config.text.vertical}
                                     </button>
 
                                     <button type="button" onClick={() => dispatch(toggle_menu('collapsible-vertical'))} className={`${config.menu === 'collapsible-vertical' ? 'btn-primary' : 'btn-outline-primary'} btn`}>
-                                        Collapsible
+                                        {config.text.collapsible}
                                     </button>
 
                                 </div>
@@ -126,16 +152,16 @@ export default function Setting () {
 
                             <div className="mb-3 rounded-md border border-dashed border-white-light px-4 py-5 dark:border-[#1b2e4b]">
 
-                                <h5 className="text-base leading-none dark:text-white">Layout</h5>
+                                <h5 className="text-base leading-none dark:text-white">{config.text.layout}</h5>
 
                                 <div className="mt-5 flex gap-2">
 
                                     <button type="button" onClick={() => dispatch(toggle_layout('boxed-layout'))} className={`${config.layout === 'boxed-layout' ? 'btn-primary' : 'btn-outline-primary'} btn flex-auto`}>
-                                        Box
+                                        {config.text.box}
                                     </button>
 
                                     <button type="button" className={`${config.layout === 'full' ? 'btn-primary' : 'btn-outline-primary'} btn flex-auto`} onClick={() => dispatch(toggle_layout('full'))}>
-                                        Full
+                                        {config.text.full}
                                     </button>
 
                                 </div>
@@ -144,16 +170,16 @@ export default function Setting () {
 
                             <div className="hidden mb-3 rounded-md border border-dashed border-white-light px-4 py-5 dark:border-[#1b2e4b]">
 
-                                <h5 className="text-base leading-none dark:text-white">Direction</h5>
+                                <h5 className="text-base leading-none dark:text-white">{config.text.direction}</h5>
 
                                 <div className="mt-5 flex gap-2">
 
                                     <button type="button" className={`${config.dir === 'ltr' ? 'btn-primary' : 'btn-outline-primary'} btn flex-auto`} onClick={() => dispatch(toggle_dir('ltr'))}>
-                                        LTR
+                                        {config.text.ltr}
                                     </button>
 
                                     <button type="button" className={`${config.dir === 'rtl' ? 'btn-primary' : 'btn-outline-primary'} btn flex-auto`} onClick={() => dispatch(toggle_dir('rtl'))}>
-                                        RTL
+                                        {config.text.rtl}
                                     </button>
 
                                 </div>
@@ -162,23 +188,23 @@ export default function Setting () {
 
                             <div className="mb-3 rounded-md border border-dashed border-white-light px-4 py-5 dark:border-[#1b2e4b]">
 
-                                <h5 className="text-base leading-none dark:text-white">Navbar Type</h5>
+                                <h5 className="text-base leading-none dark:text-white">{config.text.navbar_type}</h5>
 
                                 <div className="mt-5 flex justify-between items-center gap-3 text-primary">
 
                                     <label className="mb-0 inline-flex pointer">
                                         <input type="radio" checked={config.nav === 'navbar-sticky'} value="navbar-sticky" className="form-radio" onChange={() => dispatch(toggle_nav('navbar-sticky'))}/>
-                                        <span className='px-1'>Sticky</span>
+                                        <span className='px-1'>{config.text.sticky}</span>
                                     </label>
 
                                     <label className="mb-0 inline-flex pointer">
                                         <input type="radio" checked={config.nav === 'navbar-floating'} value="navbar-floating" className="form-radio" onChange={() => dispatch(toggle_nav('navbar-floating'))}/>
-                                        <span className='px-1'>Floating</span>
+                                        <span className='px-1'>{config.text.floating}</span>
                                     </label>
 
                                     <label className="mb-0 inline-flex pointer">
                                         <input type="radio" checked={config.nav === 'navbar-static'} value="navbar-static" className="form-radio" onChange={() => dispatch(toggle_nav('navbar-static'))}/>
-                                        <span className='px-1'>Static</span>
+                                        <span className='px-1'>{config.text.static}</span>
                                     </label>
 
                                 </div>
@@ -187,19 +213,19 @@ export default function Setting () {
 
                             <div className="mb-3 rounded-md border border-dashed border-white-light px-4 py-5 dark:border-[#1b2e4b]">
 
-                                <h5 className="text-base leading-none dark:text-white">Router Transition</h5>
+                                <h5 className="text-base leading-none dark:text-white">{config.text.animation}</h5>
 
                                 <select className="mt-5 pointer form-select border-primary text-primary" value={config.animation} onChange={(e) => dispatch(toggle_animation(e.target.value))}>
-                                    <option value=" ">Select Animation</option>
-                                    <option value="animate__fadeIn">Fade</option>
-                                    <option value="animate__fadeInDown">Fade Down</option>
-                                    <option value="animate__fadeInUp">Fade Up</option>
-                                    <option value="animate__fadeInLeft">Fade Left</option>
-                                    <option value="animate__fadeInRight">Fade Right</option>
-                                    <option value="animate__slideInDown">Slide Down</option>
-                                    <option value="animate__slideInLeft">Slide Left</option>
-                                    <option value="animate__slideInRight">Slide Right</option>
-                                    <option value="animate__zoomIn">Zoom In</option>
+                                    <option value=" ">{config.text.select_animation}</option>
+                                    <option value="animate__fadeIn">{config.text.fade}</option>
+                                    <option value="animate__fadeInDown">{config.text.fade_down}</option>
+                                    <option value="animate__fadeInUp">{config.text.fade_up}</option>
+                                    <option value="animate__fadeInLeft">{config.text.fade_left}</option>
+                                    <option value="animate__fadeInRight">{config.text.fade_right}</option>
+                                    <option value="animate__slideInDown">{config.text.slide_down}</option>
+                                    <option value="animate__slideInLeft">{config.text.slide_left}</option>
+                                    <option value="animate__slideInRight">{config.text.slide_right}</option>
+                                    <option value="animate__zoomIn">{config.text.zoom_in}</option>
                                 </select>
 
                             </div>

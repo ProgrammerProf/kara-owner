@@ -2,7 +2,6 @@
 import { api, date, host, file_info, fix_date, check_class, matching, fix_time, sound, print, diff_date } from '@/public/script/public';
 import Loader from "@/app/component/loader";
 import Dropdown from '@/app/component/menu';
-import Select from '@/app/component/select';
 import { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
@@ -22,7 +21,6 @@ export default function Chat () {
     const [search, setSearch] = useState('');
     const [button, setButton] = useState(false);
     const [smooth, setSmooth] = useState(false);
-    const [model, setModel] = useState(false);
     const [users, setUsers] = useState([]);
     const [socket, setSocket] = useState({});
 
@@ -91,13 +89,13 @@ export default function Chat () {
     }
     const get_data = async() => {
 
-        const response = await api('chat', {id: config.user?.id, user: config.user.id});
-
+        const response = await api('chat', {token: config.user.token});
         let contacts = response.contacts?.sort((a, b) => diff_date(a.messages.slice(-1)[0]?.date, b.messages.slice(-1)[0]?.date)) || [];
+        contacts = contacts.map(_ => { _.user.id === 1 ? _.user = {id: 1, name: config.text.support, online: true} : ''; return _; });
 
-        set_data(contacts);
-        setUsers(response.users);
         setLoader(false);
+        set_data(contacts);
+        setUsers([{id: 1, name: config.text.support, online: true}]);
 
     }
     const get_messages = async( id ) => {
@@ -105,7 +103,7 @@ export default function Chat () {
         if ( data.find(_ => _.id === id)?.opened ) return scroll(0, false);
 
         setLoader(true);
-        const response  = await api('chat/get', {id: id, user: config.user.id});
+        const response  = await api('chat/get', {id: id, token: config.user.token});
         let new_data = data.map((item) => {
             if ( item.id === id ) {
                 item.messages = response.messages || [];
@@ -121,7 +119,6 @@ export default function Chat () {
     }
     const new_contact = async( id ) => {
 
-        setModel(false);
         let _contact_ = data.find(_ => _.user.id === id);
         if ( _contact_?.id ) return select({}, _contact_.id);
         let new_data = data;
@@ -138,7 +135,7 @@ export default function Chat () {
         if ( contact === id ) setContact(0);
         setData(data.filter(_ => _.id !== id));
         setContacts(data.filter(_ => _.id !== id));
-        const response = await api('chat/delete', {id: id, for_all: for_all || false, user: config.user.id});
+        const response = await api('chat/delete', {id: id, for_all: for_all || false, token: config.user.token});
 
     }
     const send_message = async( file, link ) => {
@@ -147,7 +144,7 @@ export default function Chat () {
 
         let msg = {
             id: id,
-            user: config.user.id,
+            token: config.user.token,
             sender: config.user.id,
             receiver: data.find(_ => _.id === contact).user?.id || 0,
             content: textInput.current?.value || '',
@@ -195,7 +192,7 @@ export default function Chat () {
         _data_.messages = _data_.messages.map(_ => { _.receiver === config.user.id ? _.active = true : ''; _.readen = true; return _ });
         _data_.unread = 0;
         setData([...new_data]);
-        const response = await api('chat/active', {id: id, user: config.user?.id});
+        const response = await api('chat/active', {id: id, token: config.user.token});
 
     }
     const select = ( e, id ) => {
@@ -248,9 +245,9 @@ export default function Chat () {
     useEffect(() => {
 
         get_data();
-        document.title = "Chat box";
+        document.title = config.text.chat_box;
         setTimeout(_ => textInput.current?.focus(), 100);        
-        // setSocket(new WebSocket(`ws://${host}/chat/${config.user.id}`));
+        // setSocket(new WebSocket(`ws://${host}/chat/${config.user.token}`));
         // socket.onmessage = (e) => on_message(JSON.parse(e.data));
 
     }, []);
@@ -276,49 +273,20 @@ export default function Chat () {
 
                     </div>
 
-                    <div className="dropdown">
+                    <button type='button' onClick={() => new_contact(1)} className="flex justify-center items-center w-9 h-9 mt-[-2px] rounded-full pointer hover:text-primary bg-primary/10 hover:bg-primary/20">
 
-                        <Dropdown offset={[0, 5]} placement={`${config.dir === 'rtl' ? 'bottom-start' : 'bottom-end'}`} btnClassName="bg-[#f4f4f4] dark:bg-[#1b2e4b] hover:bg-primary-light w-8 h-8 rounded-full !flex justify-center items-center hover:text-primary"
-                            button={
-                                <svg className="opacity-70" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="5" cy="12" r="2" stroke="currentColor" strokeWidth="1.5" />
-                                    <circle opacity="0.5" cx="12" cy="12" r="2" stroke="currentColor" strokeWidth="1.5" />
-                                    <circle cx="19" cy="12" r="2" stroke="currentColor" strokeWidth="1.5" />
-                                </svg>
-                            }>
-
-                            <ul className="whitespace-nowrap">
-
-                                <li onClick={() => setModel(true)}>
-                                    <button>
-                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0">
-                                            <path fillRule="evenodd" clipRule="evenodd" d="M10.4036 22.4797L10.6787 22.015C11.1195 21.2703 11.3399 20.8979 11.691 20.6902C12.0422 20.4825 12.5001 20.4678 13.4161 20.4385C14.275 20.4111 14.8523 20.3361 15.3458 20.1317C16.385 19.7012 17.2106 18.8756 17.641 17.8365C17.9639 17.0571 17.9639 16.0691 17.9639 14.093V13.2448C17.9639 10.4683 17.9639 9.08006 17.3389 8.06023C16.9892 7.48958 16.5094 7.0098 15.9388 6.66011C14.919 6.03516 13.5307 6.03516 10.7542 6.03516H8.20964C5.43314 6.03516 4.04489 6.03516 3.02507 6.66011C2.45442 7.0098 1.97464 7.48958 1.62495 8.06023C1 9.08006 1 10.4683 1 13.2448V14.093C1 16.0691 1 17.0571 1.32282 17.8365C1.75326 18.8756 2.57886 19.7012 3.61802 20.1317C4.11158 20.3361 4.68882 20.4111 5.5477 20.4385C6.46368 20.4678 6.92167 20.4825 7.27278 20.6902C7.6239 20.8979 7.84431 21.2703 8.28514 22.015L8.5602 22.4797C8.97002 23.1721 9.9938 23.1721 10.4036 22.4797ZM13.1928 14.5171C13.7783 14.5171 14.253 14.0424 14.253 13.4568C14.253 12.8713 13.7783 12.3966 13.1928 12.3966C12.6072 12.3966 12.1325 12.8713 12.1325 13.4568C12.1325 14.0424 12.6072 14.5171 13.1928 14.5171ZM10.5422 13.4568C10.5422 14.0424 10.0675 14.5171 9.48193 14.5171C8.89637 14.5171 8.42169 14.0424 8.42169 13.4568C8.42169 12.8713 8.89637 12.3966 9.48193 12.3966C10.0675 12.3966 10.5422 12.8713 10.5422 13.4568ZM5.77108 14.5171C6.35664 14.5171 6.83133 14.0424 6.83133 13.4568C6.83133 12.8713 6.35664 12.3966 5.77108 12.3966C5.18553 12.3966 4.71084 12.8713 4.71084 13.4568C4.71084 14.0424 5.18553 14.5171 5.77108 14.5171Z" fill="currentColor"></path>
-                                            <path opacity="0.5" d="M15.486 1C16.7529 0.999992 17.7603 0.999986 18.5683 1.07681C19.3967 1.15558 20.0972 1.32069 20.7212 1.70307C21.3632 2.09648 21.9029 2.63623 22.2963 3.27821C22.6787 3.90219 22.8438 4.60265 22.9226 5.43112C22.9994 6.23907 22.9994 7.24658 22.9994 8.51343V9.37869C22.9994 10.2803 22.9994 10.9975 22.9597 11.579C22.9191 12.174 22.8344 12.6848 22.6362 13.1632C22.152 14.3323 21.2232 15.2611 20.0541 15.7453C20.0249 15.7574 19.9955 15.7691 19.966 15.7804C19.8249 15.8343 19.7039 15.8806 19.5978 15.915H17.9477C17.9639 15.416 17.9639 14.8217 17.9639 14.093V13.2448C17.9639 10.4683 17.9639 9.08006 17.3389 8.06023C16.9892 7.48958 16.5094 7.0098 15.9388 6.66011C14.919 6.03516 13.5307 6.03516 10.7542 6.03516H8.20964C7.22423 6.03516 6.41369 6.03516 5.73242 6.06309V4.4127C5.76513 4.29934 5.80995 4.16941 5.86255 4.0169C5.95202 3.75751 6.06509 3.51219 6.20848 3.27821C6.60188 2.63623 7.14163 2.09648 7.78361 1.70307C8.40759 1.32069 9.10805 1.15558 9.93651 1.07681C10.7445 0.999986 11.7519 0.999992 13.0188 1H15.486Z" fill="currentColor"></path>
-                                        </svg>
-                                        <span className="ltr:pr-3 rtl:pl-3">New Message</span>
-                                    </button>
-                                </li>
-                                <li onClick={() => router.push('/settings')}>
-                                    <button>
-                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2">
-                                            <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5"></circle>
-                                            <path d="M13.7654 2.15224C13.3978 2 12.9319 2 12 2C11.0681 2 10.6022 2 10.2346 2.15224C9.74457 2.35523 9.35522 2.74458 9.15223 3.23463C9.05957 3.45834 9.0233 3.7185 9.00911 4.09799C8.98826 4.65568 8.70226 5.17189 8.21894 5.45093C7.73564 5.72996 7.14559 5.71954 6.65219 5.45876C6.31645 5.2813 6.07301 5.18262 5.83294 5.15102C5.30704 5.08178 4.77518 5.22429 4.35436 5.5472C4.03874 5.78938 3.80577 6.1929 3.33983 6.99993C2.87389 7.80697 2.64092 8.21048 2.58899 8.60491C2.51976 9.1308 2.66227 9.66266 2.98518 10.0835C3.13256 10.2756 3.3397 10.437 3.66119 10.639C4.1338 10.936 4.43789 11.4419 4.43786 12C4.43783 12.5581 4.13375 13.0639 3.66118 13.3608C3.33965 13.5629 3.13248 13.7244 2.98508 13.9165C2.66217 14.3373 2.51966 14.8691 2.5889 15.395C2.64082 15.7894 2.87379 16.193 3.33973 17C3.80568 17.807 4.03865 18.2106 4.35426 18.4527C4.77508 18.7756 5.30694 18.9181 5.83284 18.8489C6.07289 18.8173 6.31632 18.7186 6.65204 18.5412C7.14547 18.2804 7.73556 18.27 8.2189 18.549C8.70224 18.8281 8.98826 19.3443 9.00911 19.9021C9.02331 20.2815 9.05957 20.5417 9.15223 20.7654C9.35522 21.2554 9.74457 21.6448 10.2346 21.8478C10.6022 22 11.0681 22 12 22C12.9319 22 13.3978 22 13.7654 21.8478C14.2554 21.6448 14.6448 21.2554 14.8477 20.7654C14.9404 20.5417 14.9767 20.2815 14.9909 19.902C15.0117 19.3443 15.2977 18.8281 15.781 18.549C16.2643 18.2699 16.8544 18.2804 17.3479 18.5412C17.6836 18.7186 17.927 18.8172 18.167 18.8488C18.6929 18.9181 19.2248 18.7756 19.6456 18.4527C19.9612 18.2105 20.1942 17.807 20.6601 16.9999C21.1261 16.1929 21.3591 15.7894 21.411 15.395C21.4802 14.8691 21.3377 14.3372 21.0148 13.9164C20.8674 13.7243 20.6602 13.5628 20.3387 13.3608C19.8662 13.0639 19.5621 12.558 19.5621 11.9999C19.5621 11.4418 19.8662 10.9361 20.3387 10.6392C20.6603 10.4371 20.8675 10.2757 21.0149 10.0835C21.3378 9.66273 21.4803 9.13087 21.4111 8.60497C21.3592 8.21055 21.1262 7.80703 20.6602 7C20.1943 6.19297 19.9613 5.78945 19.6457 5.54727C19.2249 5.22436 18.693 5.08185 18.1671 5.15109C17.9271 5.18269 17.6837 5.28136 17.3479 5.4588C16.8545 5.71959 16.2644 5.73002 15.7811 5.45096C15.2977 5.17191 15.0117 4.65566 14.9909 4.09794C14.9767 3.71848 14.9404 3.45833 14.8477 3.23463C14.6448 2.74458 14.2554 2.35523 13.7654 2.15224Z" stroke="currentColor" strokeWidth="1.5"></path>
-                                        </svg>
-                                        <span className="ltr:pr-3 rtl:pl-3">Settings</span>
-                                    </button>
-                                </li>
-                            
-                            </ul>
-
-                        </Dropdown>
+                        <svg className="scale-[.95]" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path fillRule="evenodd" clipRule="evenodd" d="M10.4036 22.4797L10.6787 22.015C11.1195 21.2703 11.3399 20.8979 11.691 20.6902C12.0422 20.4825 12.5001 20.4678 13.4161 20.4385C14.275 20.4111 14.8523 20.3361 15.3458 20.1317C16.385 19.7012 17.2106 18.8756 17.641 17.8365C17.9639 17.0571 17.9639 16.0691 17.9639 14.093V13.2448C17.9639 10.4683 17.9639 9.08006 17.3389 8.06023C16.9892 7.48958 16.5094 7.0098 15.9388 6.66011C14.919 6.03516 13.5307 6.03516 10.7542 6.03516H8.20964C5.43314 6.03516 4.04489 6.03516 3.02507 6.66011C2.45442 7.0098 1.97464 7.48958 1.62495 8.06023C1 9.08006 1 10.4683 1 13.2448V14.093C1 16.0691 1 17.0571 1.32282 17.8365C1.75326 18.8756 2.57886 19.7012 3.61802 20.1317C4.11158 20.3361 4.68882 20.4111 5.5477 20.4385C6.46368 20.4678 6.92167 20.4825 7.27278 20.6902C7.6239 20.8979 7.84431 21.2703 8.28514 22.015L8.5602 22.4797C8.97002 23.1721 9.9938 23.1721 10.4036 22.4797ZM13.1928 14.5171C13.7783 14.5171 14.253 14.0424 14.253 13.4568C14.253 12.8713 13.7783 12.3966 13.1928 12.3966C12.6072 12.3966 12.1325 12.8713 12.1325 13.4568C12.1325 14.0424 12.6072 14.5171 13.1928 14.5171ZM10.5422 13.4568C10.5422 14.0424 10.0675 14.5171 9.48193 14.5171C8.89637 14.5171 8.42169 14.0424 8.42169 13.4568C8.42169 12.8713 8.89637 12.3966 9.48193 12.3966C10.0675 12.3966 10.5422 12.8713 10.5422 13.4568ZM5.77108 14.5171C6.35664 14.5171 6.83133 14.0424 6.83133 13.4568C6.83133 12.8713 6.35664 12.3966 5.77108 12.3966C5.18553 12.3966 4.71084 12.8713 4.71084 13.4568C4.71084 14.0424 5.18553 14.5171 5.77108 14.5171Z" fill="currentColor"></path>
+                            <path opacity="0.5" d="M15.486 1C16.7529 0.999992 17.7603 0.999986 18.5683 1.07681C19.3967 1.15558 20.0972 1.32069 20.7212 1.70307C21.3632 2.09648 21.9029 2.63623 22.2963 3.27821C22.6787 3.90219 22.8438 4.60265 22.9226 5.43112C22.9994 6.23907 22.9994 7.24658 22.9994 8.51343V9.37869C22.9994 10.2803 22.9994 10.9975 22.9597 11.579C22.9191 12.174 22.8344 12.6848 22.6362 13.1632C22.152 14.3323 21.2232 15.2611 20.0541 15.7453C20.0249 15.7574 19.9955 15.7691 19.966 15.7804C19.8249 15.8343 19.7039 15.8806 19.5978 15.915H17.9477C17.9639 15.416 17.9639 14.8217 17.9639 14.093V13.2448C17.9639 10.4683 17.9639 9.08006 17.3389 8.06023C16.9892 7.48958 16.5094 7.0098 15.9388 6.66011C14.919 6.03516 13.5307 6.03516 10.7542 6.03516H8.20964C7.22423 6.03516 6.41369 6.03516 5.73242 6.06309V4.4127C5.76513 4.29934 5.80995 4.16941 5.86255 4.0169C5.95202 3.75751 6.06509 3.51219 6.20848 3.27821C6.60188 2.63623 7.14163 2.09648 7.78361 1.70307C8.40759 1.32069 9.10805 1.15558 9.93651 1.07681C10.7445 0.999986 11.7519 0.999992 13.0188 1H15.486Z" fill="currentColor"></path>
+                        </svg>
                         
-                    </div>
+                    </button>
 
                 </div>
 
                 <div className="relative mt-4">
 
-                    <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} className="form-input peer search-input" placeholder="Search" autoComplete='off'/>
+                    <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} className="form-input peer search-input" placeholder={config.text.search} autoComplete='off'/>
 
                     <div className="h-px w-full border-b border-[#e0e6ed] dark:border-[#1b2e4b] mt-3"></div>
 
@@ -413,19 +381,7 @@ export default function Chat () {
                                                                     <path opacity="0.5" d="M9.5 11L10 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"></path>
                                                                     <path opacity="0.5" d="M14.5 11L14 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"></path>
                                                                 </svg>
-                                                                <span className="ltr:mr-4 rtl:ml-4">Delete</span>
-                                                            </button>
-                                                        </li>
-                                                        <li onClick={(e) => delete_contact(item.id, true)}>
-                                                            <button>
-                                                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0">
-                                                                    <path opacity="0.5" d="M9.17065 4C9.58249 2.83481 10.6937 2 11.9999 2C13.3062 2 14.4174 2.83481 14.8292 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"></path>
-                                                                    <path d="M20.5001 6H3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"></path>
-                                                                    <path d="M18.8334 8.5L18.3735 15.3991C18.1965 18.054 18.108 19.3815 17.243 20.1907C16.378 21 15.0476 21 12.3868 21H11.6134C8.9526 21 7.6222 21 6.75719 20.1907C5.89218 19.3815 5.80368 18.054 5.62669 15.3991L5.16675 8.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"></path>
-                                                                    <path opacity="0.5" d="M9.5 11L10 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"></path>
-                                                                    <path opacity="0.5" d="M14.5 11L14 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"></path>
-                                                                </svg>
-                                                                <span className="ltr:mr-4 rtl:ml-4">Delete For All</span>
+                                                                <span className="ltr:mr-4 rtl:ml-4">{config.text.delete}</span>
                                                             </button>
                                                         </li>
                                                     
@@ -448,7 +404,7 @@ export default function Chat () {
 
                         <div className="w-full flex justify-center items-center py-10 no-select">
 
-                            <p className="tracking-wide">No data available .</p>
+                            <p className="tracking-wide">{config.text.no_data}</p>
 
                         </div>
 
@@ -503,7 +459,7 @@ export default function Chat () {
                                     </p>
 
                                     <p className="text-white-dark text-xs mt-[.15rem] no-select">
-                                        {data.filter(_ => _.id === contact)[0]?.user.online ? 'Online' : 'Offline'}
+                                        {data.filter(_ => _.id === contact)[0]?.user.online ? config.text.online : config.text.offline}
                                     </p>
 
                                 </div>
@@ -527,7 +483,7 @@ export default function Chat () {
                                             <span className="material-symbols-outlined icon mt-[2px]" style={{ fontSize: '.85rem' }}>lock</span>
 
                                             <span className='mx-[.4rem]'>
-                                                Messages are completely encrypted, so that no one can read them .
+                                                {config.text.encrypt_messages}
                                             </span>
 
                                         </span>
@@ -750,8 +706,6 @@ export default function Chat () {
                 }
 
             </div>
-
-            <Select model={model} setModel={setModel} data={users} onChange={new_contact}/>
 
         </div>
 

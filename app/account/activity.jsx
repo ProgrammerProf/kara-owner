@@ -21,27 +21,27 @@ export default function Activity ({ activity }) {
         
         return [
             {
-                accessor: 'invoice', sortable: true, title: 'ID',
+                accessor: 'invoice', sortable: true, title: 'id',
                 render: ({ id }) => <div className="font-semibold select-text default">{id}</div>,
             },
             {
-                accessor: 'type', sortable: true, title: 'Action',
+                accessor: 'type', sortable: true, title: 'action',
                 render: ({ type, id }) => <div className="font-semibold select-text default">{fix_value(type)}</div>,
             },
             {
-                accessor: 'ip', sortable: true, title: 'IP',
+                accessor: 'ip', sortable: true, title: 'ip',
                 render: ({ ip, id }) => <div className="font-semibold select-text default">{ip}</div>,
             },
             {
-                accessor: 'host', sortable: true, title: 'Device',
+                accessor: 'host', sortable: true, title: 'device',
                 render: ({ host, id }) => <div className="font-semibold select-text default">{host}</div>,
             },
             {
-                accessor: 'amount', sortable: true, title: 'Amount',
+                accessor: 'amount', sortable: true, title: 'amount',
                 render: ({ amount, id }) => <div className="font-semibold select-text default">{amount ? `${fix_number(amount)} RAS` : '-'}</div>,
             },
             {
-                accessor: 'status', sortable: true, title: 'Status',
+                accessor: 'status', sortable: true, title: 'status',
                 render: ({ status, id }) => 
                 status === 1 ?
                     <span className='badge badge-outline-warning'>Pending</span>
@@ -54,7 +54,7 @@ export default function Activity ({ activity }) {
                 : <span className='font-semibold select-text default'>-</span>
             },
             {
-                accessor: 'date', sortable: true, title: 'Date',
+                accessor: 'date', sortable: true, title: 'date',
                 render: ({ date, id }) => <div className="font-semibold select-text default">{fix_date(date)}</div>,
             },
         ];
@@ -62,7 +62,7 @@ export default function Activity ({ activity }) {
     }
     const delete_ = async( ids ) => {
 
-        const response = await api('account/history/delete', {ids: JSON.stringify(ids), user: config.user.id});
+        const response = await api('account/history/delete', {ids: JSON.stringify(ids), token: config.user.token});
         return response;
         
     }
@@ -82,6 +82,12 @@ export default function Activity ({ activity }) {
         return result;
 
     }
+    useEffect(() => {
+        
+        document.title = config.text.account;
+
+    }, []);
+
     return (
 
         <Table 

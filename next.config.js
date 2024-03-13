@@ -1,5 +1,7 @@
+const { truncate } = require('fs/promises');
+
 /** @type {import('next').NextConfig} */
 module.exports = {
-    reactStrictMode: false,
+    reactStrictMode: true,
     swcMinify: true,
 };

@@ -1,6 +1,7 @@
 "use client";
 import { file_info, alert_msg, host, print } from '@/public/script/public';
 import { Fragment, useEffect, useRef, useState } from 'react';
+import { useSelector } from 'react-redux';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper';
 import 'swiper/css';
@@ -8,6 +9,7 @@ import 'swiper/css/navigation';
 
 export default function Files ({ data, setData, multiple, user }) {
    
+    const config = useSelector((state) => state.config);
     const inputFile = useRef(null);
     const [swiper, setSwiper] = useState(null);
     const [files, setFiles] = useState([]);
@@ -29,7 +31,7 @@ export default function Files ({ data, setData, multiple, user }) {
                 let size = file_info(f, 'size');
                 let type = file_info(f, 'type');
                 let ext = file_info(f, 'ext');
-                if ( type !== 'image' && type !== 'video' ) return alert_msg('Invalid file formate - required image or video', 'error');
+                if ( type !== 'image' && type !== 'video' ) return alert_msg(config.text.error_format, 'error');
 
                 let _files_ = files;
                 _files_.push([type, fr.result]);
@@ -70,7 +72,7 @@ export default function Files ({ data, setData, multiple, user }) {
             
             let type  = file_info(f, 'type');
             let ext = file_info(f, 'ext');
-            if ( type !== 'image') return alert_msg('Invalid file formate - required image', 'error');
+            if ( type !== 'image') return alert_msg(config.text.error_format, 'error');
             setImage(fr.result);
             setData({...data, file: f, ext: ext});
             
@@ -156,7 +158,7 @@ export default function Files ({ data, setData, multiple, user }) {
                                     <path d="M12 16V3M12 3L16 7.375M12 3L8 7.375" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
                                 </svg>
 
-                                <span>Upload File</span>
+                                <span>{config.text.upload_file}</span>
 
                             </button>
 
@@ -165,7 +167,7 @@ export default function Files ({ data, setData, multiple, user }) {
                         <div className="banner-index">
                             <span className="current-index">{files.length ? index : 0}</span> / 
                             <span className="count-sliders px-1">{files.length}</span>
-                            <span>Files</span>
+                            <span>{config.text.files}</span>
                         </div>
 
                         <input type="file" ref={inputFile} onChange={add_file} className="hidden" multiple/>
@@ -193,7 +195,7 @@ export default function Files ({ data, setData, multiple, user }) {
                             <path opacity="0.5" d="M13.8879 3.66406C13.8879 3.66406 13.9806 5.23976 15.3709 6.63008C16.7613 8.0204 18.337 8.11308 18.337 8.11308M5.75821 17.7437L4.25732 16.2428" stroke="#ddd" strokeWidth="1.5"></path>
                         </svg>
 
-                        <span className="mt-2">Edit</span>
+                        <span className="mt-2">{config.text.edit}</span>
 
                     </div>
 
@@ -206,3 +208,4 @@ export default function Files ({ data, setData, multiple, user }) {
     );
 
 };
+

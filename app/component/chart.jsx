@@ -1,5 +1,5 @@
 "use client";
-import { fix_number, date, print } from '@/public/script/public';
+import { fix_number, date, print, lower } from '@/public/script/public';
 import { Fragment, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import dynamic from 'next/dynamic';
@@ -94,7 +94,7 @@ export default function Chart ({ statistics, frame, type, label, color, light, t
                 left: -7,
                 top: 22,
             },
-            colors: ['#00ab55', '#e2a03f', '#2196F3', '#E7515A'],
+            colors: ['#00ab55', '#2196F3', '#E7515A', '#e2a03f'],
             markers: {
                 discrete: [
                     {
@@ -259,7 +259,7 @@ export default function Chart ({ statistics, frame, type, label, color, light, t
                             },
                             total: {
                                 show: true,
-                                label: 'Total',
+                                label: config.text.total,
                                 color: '#888ea8',
                                 fontSize: '29px',
                                 formatter: (w) => {
@@ -326,10 +326,10 @@ export default function Chart ({ statistics, frame, type, label, color, light, t
                                         }>
 
                                         <ul>
-                                            <li onClick={() => onChange('daily')}><button type="button">Daily</button></li>
-                                            <li onClick={() => onChange('weekly')}><button type="button">Weekly</button></li>
-                                            <li onClick={() => onChange('monthly')}><button type="button">Monthly</button></li>
-                                            <li onClick={() => onChange('yearly')}><button type="button">Yearly</button></li>
+                                            <li onClick={() => onChange('daily')}><button type="button">{config.text.daily}</button></li>
+                                            <li onClick={() => onChange('weekly')}><button type="button">{config.text.weekly}</button></li>
+                                            <li onClick={() => onChange('monthly')}><button type="button">{config.text.monthly}</button></li>
+                                            <li onClick={() => onChange('yearly')}><button type="button">{config.text.yearly}</button></li>
                                         </ul>
 
                                     </Dropdown>
@@ -340,7 +340,7 @@ export default function Chart ({ statistics, frame, type, label, color, light, t
 
                             <p className="text-lg dark:text-white-light/90 default">
 
-                                {label} <span className="mx-2 text-primary">{fix_number(summary.balance - summary.profit).replace(/.0+$/, '')} RAS</span>
+                                {label} <span className="mx-2 text-primary ltr:ml-1 rtl:mr-1">{fix_number(summary.balance).replace(/.0+$/, '')} {config.text.currency}</span>
 
                             </p>
 
@@ -518,8 +518,8 @@ export default function Chart ({ statistics, frame, type, label, color, light, t
                                     <div className="flex-1">
 
                                         <div className="mb-2 flex font-semibold text-white-dark">
-                                            <h6>Profit</h6>
-                                            <p className="ltr:ml-auto rtl:mr-auto">{fix_number(summary.profit || 0).replace(/.0+$/, '')} R</p>
+                                            <h6>{config.text.profit}</h6>
+                                            <p className="ltr:ml-auto rtl:mr-auto">{fix_number(summary.profit || 0).replace(/.0+$/, '')} {config.text.currency}</p>
                                         </div>
 
                                         <div className="h-2 w-full rounded-full bg-dark-light shadow dark:bg-[#1b2e4b]">
@@ -548,8 +548,8 @@ export default function Chart ({ statistics, frame, type, label, color, light, t
                                     <div className="flex-1">
 
                                         <div className="mb-2 flex font-semibold text-white-dark">
-                                            <h6>Income</h6>
-                                            <p className="ltr:ml-auto rtl:mr-auto">{fix_number(summary.income).replace(/.0+$/, '')} R</p>
+                                            <h6>{config.text.income}</h6>
+                                            <p className="ltr:ml-auto rtl:mr-auto">{fix_number(summary.income).replace(/.0+$/, '')} {config.text.currency}</p>
                                         </div>
 
                                         <div className="h-2 rounded-full bg-dark-light shadow dark:bg-[#1b2e4b]">
@@ -580,8 +580,8 @@ export default function Chart ({ statistics, frame, type, label, color, light, t
                                     <div className="flex-1">
 
                                         <div className="mb-2 flex font-semibold text-white-dark">
-                                            <h6>Expenses</h6>
-                                            <p className="ltr:ml-auto rtl:mr-auto">{fix_number(summary.expenses).replace(/.0+$/, '')} R</p>
+                                            <h6>{config.text.expenses}</h6>
+                                            <p className="ltr:ml-auto rtl:mr-auto">{fix_number(summary.expenses).replace(/.0+$/, '')} {config.text.currency}</p>
                                         </div>
 
                                         <div className="h-2 w-full rounded-full bg-dark-light shadow dark:bg-[#1b2e4b]">

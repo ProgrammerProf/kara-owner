@@ -1,6 +1,6 @@
 "use client";
 import { toggle_user } from '@/public/script/store';
-import { api, alert_msg, file_info, date, host, fix_date } from '@/public/script/public';
+import { api, alert_msg, file_info, date, host, fix_date, get_session, fix_number, upper, print } from '@/public/script/public';
 import { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Loader from '@/app/component/loader';
@@ -8,11 +8,11 @@ import Activity from './activity';
 
 export default function Account () {
 
+    const config = useSelector((state) => state.config);
     const dispatch = useDispatch();
     const input = useRef();
-    const config = useSelector((state) => state.config);
     const [tab, setTab] = useState(0);
-    const [data, setData] = useState(config.user || {});
+    const [data, setData] = useState(config.user);
     const [activity, setActivity] = useState([]);
     const [loader, setLoader] = useState(false);
     const [loader1, setLoader1] = useState(true);
@@ -20,51 +20,52 @@ export default function Account () {
 
     const get_data = async() => {
 
-        const response = await api('account', {user: config.user.id});
-        setLoader1(false);
+        const response = await api('account', {token: get_session('user').token});
         if ( !response.user ) return;
 
-        let _user_ = {...response.user, active: true, update: date()};
+        let _user_ = {...response.user, logged: true, update: date()};
         setData(_user_);
         setActivity(response.activity || []);
         dispatch(toggle_user(_user_));
-
+        setLoader1(false);
+        
     }
     const save_data = async(e) => {
 
         e.preventDefault();
         setLoader(true);
-        const response = await api('account/save', {...data, user: config.user.id});
+        const response = await api('account/save', {...data, token: get_session('user').token});
         setLoader(false);
 
-        if ( response.status === true ) {
-            alert_msg('Your account Updated successfully');
-            let user = {...response.user, active: true, update: date()};
+        if ( response.status === true && response.user ) {
+            alert_msg(config.text.account_successfully);
+            let user = {...response.user, logged: true, update: date()};
             setData(user);
             dispatch(toggle_user(user));
             setTab(0);
+            document.title = `${config.text.account} | ${response.user.name || ''}`;
         }
-        else if ( response.status === 'exists' ) alert_msg('Sorry, this e-mail is already exists !', 'error');
-        else alert_msg('Sorry, something is went wrong !', 'error');
+        else if ( response.status === 'exists' ) alert_msg(config.text.email_exists, 'error');
+        else alert_msg(config.text.alert_error, 'error');
 
     }
     const change_password = async(e) => {
 
         e.preventDefault();
-        if ( data.new_password !== data.new_password1 )
-            return alert_msg('The new password is not equal to confirm password !', 'error');
-        
+        if ( data.new_password !== data.new_password1 ) return alert_msg(config.text.password_not_equal, 'error');
+        if ( data.new_password === data.old_password ) return alert_msg(config.text.password_not_match, 'error');
+
         setLoader(true);
-        const response = await api('account/password', {...data, user: config.user.id});
+        const response = await api('account/password', {...data, token: get_session('user').token});
         setLoader(false);
 
         if ( response.status === true ) {
-            alert_msg('Your password changed successfully');
+            alert_msg(config.text.password_successfully);
             setData({...data, old_password: '', new_password: '', new_password1: ''});
             setTab(0);
         }
-        else if ( response.status === 'not_match' ) alert_msg('Your old password is not correct !', 'error');
-        else alert_msg('Sorry, something is went wrong !', 'error');
+        else if ( response.status === 'not_match' ) alert_msg(config.text.error_password_old, 'error');
+        else alert_msg(config.text.alert_error, 'error');
 
     }
     const change_image = ( e ) => {
@@ -77,7 +78,7 @@ export default function Account () {
         fr.onload = () => {
             
             let type = file_info(f, 'type');
-            if ( type !== 'image') return alert_msg('Invalid file format, Image Required !', 'error');
+            if ( type !== 'image') return alert_msg(config.text.error_format, 'error');
             setData({...data, file: f});
             setImage(fr.result);
         
@@ -86,7 +87,9 @@ export default function Account () {
     }
     useEffect(() => {
         
-        document.title = "Account";
+        document.title = `${config.text.account || get_session('text')?.account} | ${get_session('user').name || ''}`;
+        setData(get_session('user') || {});
+        setImage(`${host}/U${get_session('user').id}`);
         get_data();
 
     }, []);
@@ -104,7 +107,7 @@ export default function Account () {
                             <path d="M22 12C22 12 21.0071 12.8907 19.0212 13.6851L16.2127 14.8085C14.2268 15.6028 13.2339 16 12 16C10.7661 16 9.77318 15.6028 7.7873 14.8085L4.97883 13.6851C2.99294 12.8907 2 12 2 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"></path>
                             <path d="M22 16C22 16 21.0071 16.8907 19.0212 17.6851L16.2127 18.8085C14.2268 19.6028 13.2339 20 12 20C10.7661 20 9.77318 19.6028 7.7873 18.8085L4.97883 17.6851C2.99294 16.8907 2 16 2 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"></path>
                         </svg>
-                        <span>Details</span>
+                        <span>{config.text.details}</span>
                     </a>
                 </li>
                 <li className="inline-block">
@@ -117,7 +120,7 @@ export default function Account () {
                             <path opacity="0.5" d="M9 9L5 5" stroke="currentColor" strokeWidth="1.5"></path>
                             <path opacity="0.5" d="M19 19L15 15" stroke="currentColor" strokeWidth="1.5"></path>
                         </svg>
-                        <span>Activity logs</span>
+                        <span>{config.text.activity_logs}</span>
                     </a>
                 </li>
                 <li className="inline-block">
@@ -129,7 +132,7 @@ export default function Account () {
                             <path d="M17 16C17 16.5523 16.5523 17 16 17C15.4477 17 15 16.5523 15 16C15 15.4477 15.4477 15 16 15C16.5523 15 17 15.4477 17 16Z" fill="currentColor"></path>
                             <path d="M6.75 8C6.75 5.10051 9.10051 2.75 12 2.75C14.8995 2.75 17.25 5.10051 17.25 8V10.0036C17.8174 10.0089 18.3135 10.022 18.75 10.0546V8C18.75 4.27208 15.7279 1.25 12 1.25C8.27208 1.25 5.25 4.27208 5.25 8V10.0546C5.68651 10.022 6.18264 10.0089 6.75 10.0036V8Z" fill="currentColor"></path>
                         </svg>
-                        <span>Passwords</span>
+                        <span>{config.text.passwords}</span>
                     </a>
                 </li>
 
@@ -142,12 +145,12 @@ export default function Account () {
 
                         <div className="panel w-[27%]">
 
-                            <h5 className="font-semibold text-lg mb-5 no-select">Profile</h5>
+                            <h5 className="font-semibold text-lg mb-5 no-select">{config.text.profile}</h5>
 
                             <div className="rounded-full relative edit-item-info">
 
                                 <img 
-                                    src={image || `${host}/U${data.id}`} 
+                                    src={image || '/media/public/user_icon.png'} 
                                     onError={(e) => e.target.src = "/media/public/user_icon.png"} 
                                     onLoad={(e) => e.target.src.includes('_icon') ? e.target.classList.add('empty') : e.target.classList.remove('empty')}
                                     className="banner-image rounded-full object-cover"
@@ -165,12 +168,25 @@ export default function Account () {
 
                             </div>
 
-                            <p className="text-center text-[1.3rem] tracking-wide default">Coding Master</p>
+                            <p className="text-center text-[1.3rem] tracking-wide default">{config.user.name || ''}</p>
 
-                            <ul className="mt-6 flex flex-col space-y-4 font-semibold mb-[2.9rem]">
+                            <ul className="mt-6 flex flex-col space-y-4 font-semibold mb-[3.05rem]">
 
-                                <div className="h-px w-full border-b border-[#e0e6ed] dark:border-[#1b2e4b] mb-2"></div>
+                                <li className='flex items-center default bg-[rgba(0,0,0,.05)] dark:bg-[rgba(0,0,0,.3)] p-4 relative overflow-hidden'>
 
+                                    <span className='material-symbols-outlined ltr:mr-1 rtl:ml-1'>account_balance_wallet</span>
+
+                                    <span className='text-[1.1rem] px-2 text-success font-bold'>{fix_number(data.balance)}</span>
+                                    <span className='no-select'>{config.text.currency}</span>
+
+                                    { loader1 && <Loader small /> }
+
+                                </li>
+                                <li className="flex gap-5 no-select pb-3">
+                                    <button className='btn btn-success w-full text-[.9rem] tracking-wide'>{config.text.deposit}</button>
+                                    <button className='btn btn-danger w-full text-[.9rem] py-[.6rem] tracking-wide'>{config.text.withdraw}</button>
+                                </li>
+                                <div className="h-px w-full border-b border-[#e0e6ed] dark:border-[#1b2e4b]"></div>
                                 <li className="flex gap-5 pt-[.7rem] default">
                                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white-dark">
                                         <path d="M24 5C24 6.65685 22.6569 8 21 8C19.3431 8 18 6.65685 18 5C18 3.34315 19.3431 2 21 2C22.6569 2 24 3.34315 24 5Z" fill="currentColor"></path>
@@ -190,24 +206,17 @@ export default function Account () {
                                 </li>
                                 <li className="flex gap-5 pt-[.3rem] default">
                                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white-dark">
-                                        <path opacity="0.5" d="M19.7165 20.3624C21.143 19.5846 22 18.5873 22 17.5C22 16.3475 21.0372 15.2961 19.4537 14.5C17.6226 13.5794 14.9617 13 12 13C9.03833 13 6.37738 13.5794 4.54631 14.5C2.96285 15.2961 2 16.3475 2 17.5C2 18.6525 2.96285 19.7039 4.54631 20.5C6.37738 21.4206 9.03833 22 12 22C15.1066 22 17.8823 21.3625 19.7165 20.3624Z" fill="currentColor"></path>
-                                        <path fillRule="evenodd" clipRule="evenodd" d="M5 8.51464C5 4.9167 8.13401 2 12 2C15.866 2 19 4.9167 19 8.51464C19 12.0844 16.7658 16.2499 13.2801 17.7396C12.4675 18.0868 11.5325 18.0868 10.7199 17.7396C7.23416 16.2499 5 12.0844 5 8.51464ZM12 11C13.1046 11 14 10.1046 14 9C14 7.89543 13.1046 7 12 7C10.8954 7 10 7.89543 10 9C10 10.1046 10.8954 11 12 11Z" fill="currentColor"></path>
-                                    </svg>
-                                    <span>{config.user.ip}</span>
-                                </li>
-                                <li className="flex gap-5 pt-[.3rem] default">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white-dark">
-                                        <path opacity="0.5" d="M19.7165 20.3624C21.143 19.5846 22 18.5873 22 17.5C22 16.3475 21.0372 15.2961 19.4537 14.5C17.6226 13.5794 14.9617 13 12 13C9.03833 13 6.37738 13.5794 4.54631 14.5C2.96285 15.2961 2 16.3475 2 17.5C2 18.6525 2.96285 19.7039 4.54631 20.5C6.37738 21.4206 9.03833 22 12 22C15.1066 22 17.8823 21.3625 19.7165 20.3624Z" fill="currentColor"></path>
-                                        <path fillRule="evenodd" clipRule="evenodd" d="M5 8.51464C5 4.9167 8.13401 2 12 2C15.866 2 19 4.9167 19 8.51464C19 12.0844 16.7658 16.2499 13.2801 17.7396C12.4675 18.0868 11.5325 18.0868 10.7199 17.7396C7.23416 16.2499 5 12.0844 5 8.51464ZM12 11C13.1046 11 14 10.1046 14 9C14 7.89543 13.1046 7 12 7C10.8954 7 10 7.89543 10 9C10 10.1046 10.8954 11 12 11Z" fill="currentColor"></path>
-                                    </svg>
-                                    <span>{config.user.host}</span>
-                                </li>
-                                <li className="flex gap-5 pt-[.49rem] default">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white-dark">
                                         <path d="M6.94028 2C7.35614 2 7.69326 2.32421 7.69326 2.72414V4.18487C8.36117 4.17241 9.10983 4.17241 9.95219 4.17241H13.9681C14.8104 4.17241 15.5591 4.17241 16.227 4.18487V2.72414C16.227 2.32421 16.5641 2 16.98 2C17.3958 2 17.733 2.32421 17.733 2.72414V4.24894C19.178 4.36022 20.1267 4.63333 20.8236 5.30359C21.5206 5.97385 21.8046 6.88616 21.9203 8.27586L22 9H2.92456H2V8.27586C2.11571 6.88616 2.3997 5.97385 3.09665 5.30359C3.79361 4.63333 4.74226 4.36022 6.1873 4.24894V2.72414C6.1873 2.32421 6.52442 2 6.94028 2Z" fill="currentColor"></path>
                                         <path opacity="0.5" d="M21.9995 14.0001V12.0001C21.9995 11.161 21.9963 9.66527 21.9834 9H2.00917C1.99626 9.66527 1.99953 11.161 1.99953 12.0001V14.0001C1.99953 17.7713 1.99953 19.6569 3.1711 20.8285C4.34267 22.0001 6.22829 22.0001 9.99953 22.0001H13.9995C17.7708 22.0001 19.6564 22.0001 20.828 20.8285C21.9995 19.6569 21.9995 17.7713 21.9995 14.0001Z" fill="currentColor"></path>
                                     </svg>
                                     <span>{fix_date(config.user.create_date)}</span>
+                                </li>
+                                <li className="flex gap-5 pt-[.5rem] default">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white-dark">
+                                        <path opacity="0.5" d="M19.7165 20.3624C21.143 19.5846 22 18.5873 22 17.5C22 16.3475 21.0372 15.2961 19.4537 14.5C17.6226 13.5794 14.9617 13 12 13C9.03833 13 6.37738 13.5794 4.54631 14.5C2.96285 15.2961 2 16.3475 2 17.5C2 18.6525 2.96285 19.7039 4.54631 20.5C6.37738 21.4206 9.03833 22 12 22C15.1066 22 17.8823 21.3625 19.7165 20.3624Z" fill="currentColor"></path>
+                                        <path fillRule="evenodd" clipRule="evenodd" d="M5 8.51464C5 4.9167 8.13401 2 12 2C15.866 2 19 4.9167 19 8.51464C19 12.0844 16.7658 16.2499 13.2801 17.7396C12.4675 18.0868 11.5325 18.0868 10.7199 17.7396C7.23416 16.2499 5 12.0844 5 8.51464ZM12 11C13.1046 11 14 10.1046 14 9C14 7.89543 13.1046 7 12 7C10.8954 7 10 7.89543 10 9C10 10.1046 10.8954 11 12 11Z" fill="currentColor"></path>
+                                    </svg>
+                                    <span>{config.user.ip || ''}</span>
                                 </li>
 
                             </ul>
@@ -216,35 +225,35 @@ export default function Account () {
 
                         <div className="panel lg:col-span-2 xl:col-span-3 w-[71.5%]">
 
-                            <h5 className="mb-7 font-semibold text-lg no-select">General Information</h5>
+                            <h5 className="mb-7 font-semibold text-lg no-select">{config.text.general_information}</h5>
 
                             <form className="mb-2 flex-1 grid grid-cols-1 sm:grid-cols-2 gap-6 pr-3" onSubmit={save_data}>
 
                                 <div>
-                                    <label htmlFor="name" className="mb-3">Full Name</label>
+                                    <label htmlFor="name" className="mb-3">{config.text.full_name}</label>
                                     <input id="name" type="text" value={data.name || ''} onChange={(e) => setData({...data, name: e.target.value})} className="form-input" autoComplete="off" required/>
                                 </div>
                                 <div>
-                                    <label htmlFor="phone" className="mb-3">Phone</label>
+                                    <label htmlFor="phone" className="mb-3">{config.text.phone}</label>
                                     <input id="phone" type="text" value={data.phone || ''} onChange={(e) => setData({...data, phone: e.target.value})} className="form-input" autoComplete="off" required/>
                                 </div>
                                 <div>
-                                    <label htmlFor="email" className="mb-3">E-mail</label>
+                                    <label htmlFor="email" className="mb-3">{config.text.email}</label>
                                     <input id="email" type="email" value={data.email || ''} onChange={(e) => setData({...data, email: e.target.value})} className="form-input" autoComplete="off" required/>
                                 </div>
                                 <div className="grid gap-4 md:grid-cols-2">
                                     <div>
-                                        <label htmlFor="age" className="mb-3">Age</label>
+                                        <label htmlFor="age" className="mb-3">{config.text.age}</label>
                                         <input id="age" type="number" min="0" value={data.age || 0} onChange={(e) => setData({...data, age: e.target.value})} className="form-input" autoComplete="off"/>
                                     </div>
                                     <div>
-                                        <label htmlFor="date" className="mb-3">Login Date</label>
-                                        <input id="date" type="text" value={fix_date(data.login_date)} readOnly className="form-input default"/>
+                                        <label htmlFor="date" className="mb-3">{config.text.update_date}</label>
+                                        <input id="date" type="text" value={fix_date(data.update_date)} readOnly className="form-input default"/>
                                     </div>
                                 </div>
                                 <div className="grid gap-4 md:grid-cols-2">
                                     <div>
-                                        <label htmlFor="country" className="mb-3">Country</label>
+                                        <label htmlFor="country" className="mb-3">{config.text.country}</label>
                                         <select id="country" value={data.country || 'su'} onChange={(e) => setData({...data, country: e.target.value})} className="form-select pointer">
                                             <option value="su">Saudi Arabian</option>
                                             <option value="eg">Egypt</option>
@@ -253,7 +262,7 @@ export default function Account () {
                                         </select>
                                     </div>
                                     <div>
-                                        <label htmlFor="city" className="mb-3">City</label>
+                                        <label htmlFor="city" className="mb-3">{config.text.city}</label>
                                         <select id="city" value={data.city || 'makka'} onChange={(e) => setData({...data, city: e.target.value})} className="form-select pointer">
                                             <option value="makka">Makkah</option>
                                             <option value="gadda">Gadda</option>
@@ -264,7 +273,11 @@ export default function Account () {
                                     </div>
                                 </div>
                                 <div>
-                                    <label htmlFor="language" className="mb-3">Language</label>
+                                    <label htmlFor="street" className="mb-3">{config.text.street}</label>
+                                    <input id="street" type="text" value={data.street || ''} onChange={(e) => setData({...data, street: e.target.value})} className="form-input"/>
+                                </div>
+                                <div>
+                                    <label htmlFor="language" className="mb-3">{config.text.language}</label>
                                     <select id="language" value={data.language || 'ar'} onChange={(e) => setData({...data, language: e.target.value})} className="form-select pointer">
                                         <option value="ar">Arabic</option>
                                         <option value="en">English</option>
@@ -273,11 +286,15 @@ export default function Account () {
                                     </select>
                                 </div>
                                 <div>
-                                    <label htmlFor="ip" className="mb-3">IP - Device</label>
-                                    <input id="ip" type="text" value={`${data.ip} - ${data.host}`} readOnly className="form-input default"/>
+                                    <label htmlFor="ip" className="mb-3">{config.text.ip} - {config.text.device}</label>
+                                    <input id="ip" type="text" value={`${data.ip || ''} - ${data.host || ''}`} readOnly className="form-input default"/>
+                                </div>
+                                <div>
+                                    <label htmlFor="date1" className="mb-3">{config.text.login_date}</label>
+                                    <input id="date1" type="text" value={fix_date(data.login_date)} readOnly className="form-input default"/>
                                 </div>
                                 <div className="sm:col-span-2 flex justify-end">
-                                    <button type="submit" className="btn btn-primary w-[10rem] h-[2.7rem] text-[.9rem] tracking-wide">Update</button>
+                                    <button type="submit" className="btn btn-primary w-[10rem] h-[2.7rem] text-[.9rem] tracking-wide">{config.text.update}</button>
                                 </div>
 
                             </form>
@@ -292,24 +309,24 @@ export default function Account () {
 
                         <div className="panel lg:col-span-2 xl:col-span-3 mt-7 w-[40rem]">
 
-                            <h5 className="mb-7 font-semibold text-lg no-select">Change Password</h5>
+                            <h5 className="mb-7 font-semibold text-lg no-select">{config.text.change_password}</h5>
 
                             <form className="mb-2 flex-1 grid grid-cols-1 sm:grid-cols-2 gap-6 pt-5 pb-2" onSubmit={change_password}>
 
                                 <div className='mb-2'>
-                                    <label htmlFor="old_password" className="mb-3">Old Password</label>
+                                    <label htmlFor="old_password" className="mb-3">{config.text.old_password}</label>
                                     <input id="old_password" type="password" value={data.old_password || ''} onChange={(e) => setData({...data, old_password: e.target.value})} className="form-input" autoComplete="off" required/>
                                 </div>
                                 <div className='mb-2'>
-                                    <label htmlFor="new_password" className="mb-3">New Password</label>
+                                    <label htmlFor="new_password" className="mb-3">{config.text.new_password}</label>
                                     <input id="new_password" type="password" value={data.new_password || ''} onChange={(e) => setData({...data, new_password: e.target.value})} className="form-input" autoComplete="off" required/>
                                 </div>
                                 <div className='mb-2'>
-                                    <label htmlFor="new_password1" className="mb-3">Confirm password</label>
+                                    <label htmlFor="new_password1" className="mb-3">{config.text.confirm_password}</label>
                                     <input id="new_password1" type="password" value={data.new_password1 || ''} onChange={(e) => setData({...data, new_password1: e.target.value})} className="form-input" autoComplete="off" required/>
                                 </div>
                                 <div className="sm:col-span-2 flex justify-end mt-3">
-                                    <button type="submit" className="btn btn-primary w-[10rem] h-[2.7rem] text-[.9rem] tracking-wide">Submit</button>
+                                    <button type="submit" className="btn btn-primary w-[10rem] h-[2.7rem] text-[.9rem] tracking-wide">{config.text.submit}</button>
                                 </div>
 
                             </form>
