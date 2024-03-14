@@ -1,7 +1,6 @@
 import CryptoJS from "./crypto";
 import Swal from 'sweetalert2';
-export const host = "http://127.0.0.1:8000";
-// export const host = "https://kaarra.pythonanywhere.com";
+export const host = "https://kaarra.pythonanywhere.com";
 
 export function sound ( src, vol ) {
         

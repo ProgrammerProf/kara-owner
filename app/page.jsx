@@ -73,7 +73,7 @@ export default function Home () {
     }
     useEffect(() => {
 
-        document.title = config.text.dashboard || get_session('text')?.dashboard;
+        document.title = `${config.text.logo1} ${config.text.logo2}` || get_session('text')?.dashboard;
         get_data();
 
     }, []);
