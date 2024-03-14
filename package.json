@@ -31,7 +31,6 @@
         "jquery": "^3.7.1",
         "mantine-datatable": "^1.7.35",
         "next": "14.0.2",
-        "node": "^21.7.1",
         "quill": "^1.3.7",
         "react": "^18",
         "react-18-image-lightbox": "^5.1.4",
